@@ -1,10 +1,11 @@
 SHELL           := /bin/bash
-APP_NAME        := aws-sqs-worker-job-controller
+APP_NAME        ?= aws-sqs-worker-job-controller
 API_PKG         := awssqsworkerjobcontroller
 API_VERSION     := v1
 TEMP_DIR        := _tmp
+CGO_ENABLED     ?= 1
 CURRENT_DIR     := $(shell pwd)
-GOBIN           := $(shell go env GOPATH)/bin
+GOBIN           ?= $(shell go env GOPATH)/bin
 CODE_GEN_INPUT  := k8s.io/${APP_NAME}/pkg/apis/${API_PKG}/${API_VERSION}
 CODE_GEN_OUTPUT := pkg/generated
 CODE_GEN_ARGS   := --output-base ${CURRENT_DIR} --go-header-file ${CURRENT_DIR}/${TEMP_DIR}/empty.txt
@@ -22,7 +23,7 @@ codegen: ${TEMP_DIR}
 	"${GOBIN}/informer-gen" --input-dirs "${CODE_GEN_INPUT}" --versioned-clientset-package "${CODE_GEN_OUTPUT}/clientset/versioned" --listers-package "${CODE_GEN_OUTPUT}/listers" --output-package "${CODE_GEN_OUTPUT}/informers" ${CODE_GEN_ARGS}
 
 build: codegen
-	go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_NAME}
+	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_NAME}
 
 test:
 	go test
