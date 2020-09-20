@@ -1,3 +1,8 @@
 .git
-pkg
-vendor
+_tmp
+config
+.dockerignore
+.gitignore
+Dockerfile
+Makefile
+README.md
