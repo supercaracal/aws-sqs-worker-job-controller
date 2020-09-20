@@ -16,8 +16,8 @@ all: build test lint
 ${TEMP_DIR}:
 	@mkdir -p $@
 
-codegen: ${TEMP_DIR}
-	@touch $</empty.txt
+${TEMP_DIR}/codegen: ${TEMP_DIR} pkg/apis
+	@touch -a ${TEMP_DIR}/empty.txt
 	"$(GOBIN)/deepcopy-gen" --input-dirs "${CODE_GEN_INPUT}" -O zz_generated.deepcopy --bounding-dirs "${CODE_GEN_INPUT}" ${CODE_GEN_ARGS}
 	"${GOBIN}/client-gen" --clientset-name "versioned" --input-base "" --input "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/clientset" ${CODE_GEN_ARGS}
 	"${GOBIN}/lister-gen" --input-dirs "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/listers" ${CODE_GEN_ARGS}
@@ -27,8 +27,9 @@ codegen: ${TEMP_DIR}
 	@rm -rf pkg/generated
 	@mv ${CODE_GEN_OUTPUT} pkg/
 	@rm -rf k8s.io
+	@touch $@
 
-build: codegen
+build: ${TEMP_DIR}/codegen
 	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_NAME}
 
 test:
@@ -54,4 +55,4 @@ run-container:
 clean-image:
 	@docker rmi -f ${APP_NAME}
 
-.PHONY: all codegen build test lint clean build-image lint-image run-container clean-image
+.PHONY: all build test lint clean build-image lint-image run-container clean-image
