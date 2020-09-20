@@ -1,4 +1,4 @@
-module k8s.io/aws-sqs-worker-job-controller
+module github.com/supercaracal/aws-sqs-worker-job-controller
 
 go 1.15
 

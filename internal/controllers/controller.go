@@ -21,40 +21,38 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	myapiv1 "k8s.io/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller/v1"
-	clientset "k8s.io/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
-	myscheme "k8s.io/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned/scheme"
-	informers "k8s.io/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions/awssqsworkerjobcontroller/v1"
-	listers "k8s.io/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
+	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller/v1"
+	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
+	customscheme "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned/scheme"
+	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions/awssqsworkerjobcontroller/v1"
+	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
 )
 
-const controllerAgentName = "sample-controller"
+const controllerAgentName = "aws-sqs-worker-job-controller"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a Foo is synced
+	// SuccessSynced is used as part of the Event 'reason' when a WorkerJob is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a Foo fails
-	// to sync due to a Deployment of the same name already existing.
+	// ErrResourceExists is used as part of the Event 'reason' when a WorkerJob fails
+	// to sync due to a Job of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 
 	// MessageResourceExists is the message used for Events when a resource
-	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Foo"
-	// MessageResourceSynced is the message used for an Event fired when a Foo
+	// fails to sync due to a Job already existing
+	MessageResourceExists = "Resource %q already exists and is not managed by WorkerJob"
+	// MessageResourceSynced is the message used for an Event fired when a WorkerJob
 	// is synced successfully
-	MessageResourceSynced = "Foo synced successfully"
+	MessageResourceSynced = "WorkerJob synced successfully"
 )
 
-// Controller is the controller implementation for Foo resources
+// Controller is the controller implementation for WorkerJob resources
 type Controller struct {
-	// kubeclientset is a standard kubernetes clientset
-	kubeclientset kubernetes.Interface
-	// sampleclientset is a clientset for our own API group
-	sampleclientset clientset.Interface
+	kubeclientset   kubernetes.Interface
+	customclientset clientset.Interface
 
 	deploymentsLister appslisters.DeploymentLister
 	deploymentsSynced cache.InformerSynced
-	foosLister        listers.FooLister
+	foosLister        listers.WorkerJobLister
 	foosSynced        cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
@@ -73,12 +71,12 @@ func NewController(
 	kubeclientset kubernetes.Interface,
 	sampleclientset clientset.Interface,
 	deploymentInformer appsinformers.DeploymentInformer,
-	fooInformer informers.FooInformer) *Controller {
+	fooInformer informers.WorkerJobInfomer) *Controller {
 
 	// Create event broadcaster
 	// Add sample-controller types to the default Kubernetes Scheme so Events can be
 	// logged for sample-controller types.
-	utilruntime.Must(myscheme.AddToScheme(scheme.Scheme))
+	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
@@ -302,7 +300,7 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-func (c *Controller) updateFooStatus(foo *myapiv1.WorkerJob, deployment *appsv1.Deployment) error {
+func (c *Controller) updateFooStatus(foo *customapiv1.WorkerJob, deployment *appsv1.Deployment) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -372,7 +370,7 @@ func (c *Controller) handleObject(obj interface{}) {
 // newDeployment creates a new Deployment for a Foo resource. It also sets
 // the appropriate OwnerReferences on the resource so handleObject can discover
 // the Foo resource that 'owns' it.
-func newDeployment(foo *myapiv1.WorkerJob) *appsv1.Deployment {
+func newDeployment(foo *customapiv1.WorkerJob) *appsv1.Deployment {
 	labels := map[string]string{
 		"app":        "nginx",
 		"controller": foo.Name,
@@ -382,7 +380,7 @@ func newDeployment(foo *myapiv1.WorkerJob) *appsv1.Deployment {
 			Name:      foo.Spec.DeploymentName,
 			Namespace: foo.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(foo, myapiv1.SchemeGroupVersion.WithKind("Foo")),
+				*metav1.NewControllerRef(foo, customapiv1.SchemeGroupVersion.WithKind("Foo")),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{

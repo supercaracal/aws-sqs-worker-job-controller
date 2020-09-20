@@ -6,7 +6,8 @@ TEMP_DIR        := _tmp
 CGO_ENABLED     ?= 1
 CURRENT_DIR     := $(shell pwd)
 GOBIN           ?= $(shell go env GOPATH)/bin
-CODE_GEN_DIR    := k8s.io/${APP_NAME}/pkg
+CODE_GEN_SRCS   := $(shell find pkg/apis/${API_PKG}/ -type f -name '*.go')
+CODE_GEN_DIR    := github.com/supercaracal/${APP_NAME}/pkg
 CODE_GEN_INPUT  := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
 CODE_GEN_OUTPUT := ${CODE_GEN_DIR}/generated
 CODE_GEN_ARGS   := --output-base ${CURRENT_DIR} --go-header-file ${CURRENT_DIR}/${TEMP_DIR}/empty.txt
@@ -16,7 +17,7 @@ all: build test lint
 ${TEMP_DIR}:
 	@mkdir -p $@
 
-${TEMP_DIR}/codegen: ${TEMP_DIR} pkg/apis
+${TEMP_DIR}/codegen: ${TEMP_DIR} ${CODE_GEN_SRCS}
 	@touch -a ${TEMP_DIR}/empty.txt
 	"$(GOBIN)/deepcopy-gen" --input-dirs "${CODE_GEN_INPUT}" -O zz_generated.deepcopy --bounding-dirs "${CODE_GEN_INPUT}" ${CODE_GEN_ARGS}
 	"${GOBIN}/client-gen" --clientset-name "versioned" --input-base "" --input "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/clientset" ${CODE_GEN_ARGS}
@@ -26,7 +27,7 @@ ${TEMP_DIR}/codegen: ${TEMP_DIR} pkg/apis
 	@mv ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}/zz_generated.deepcopy.go pkg/apis/${API_PKG}/${API_VERSION}/
 	@rm -rf pkg/generated
 	@mv ${CODE_GEN_OUTPUT} pkg/
-	@rm -rf k8s.io
+	@rm -rf github.com
 	@touch $@
 
 build: ${TEMP_DIR}/codegen

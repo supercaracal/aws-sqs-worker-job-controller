@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	kubeinformers "k8s.io/client-go/informers"
@@ -11,8 +12,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
-	clientset "k8s.io/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
-	informers "k8s.io/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions"
+	controllers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/controllers"
+	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
+	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions"
 )
 
 var (
@@ -20,7 +22,7 @@ var (
 	kubeconfig string
 )
 
-func setupSignalHandler() {
+func setupSignalHandler() <-chan struct{} {
 	stop := make(chan struct{})
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -50,27 +52,27 @@ func main() {
 		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	exampleClient, err := clientset.NewForConfig(cfg)
+	customClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("Error building example clientset: %s", err.Error())
+		klog.Fatalf("Error building custom clientset: %s", err.Error())
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
+	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30)
 
-	controller := NewController(kubeClient, exampleClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
-		exampleInformerFactory.Samplecontroller().V1alpha1().Foos())
+	controller := controllers.NewController(kubeClient, customClient,
+		kubeInformerFactory.Apps().V1().Job(),
+		customInformerFactory.Awssqsworkerjobcontroller().V1().WorkerJobs())
 
 	kubeInformerFactory.Start(stopCh)
-	exampleInformerFactory.Start(stopCh)
+	customInformerFactory.Start(stopCh)
 
-	if err = controller.Run(2, stopCh); err != nil {
+	if err = controller.Run(1, stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())
 	}
 }
 
 func init() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 }

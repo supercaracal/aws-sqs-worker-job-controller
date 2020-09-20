@@ -1,5 +1,5 @@
 vendor
-k8s.io
+github.com
 _tmp
 pkg/apis/awssqsworkerjobcontroller/*/zz_generated.deepcopy.go
 pkg/generated
