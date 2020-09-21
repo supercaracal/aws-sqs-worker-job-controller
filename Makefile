@@ -11,6 +11,7 @@ CODE_GEN_DIR    := github.com/supercaracal/${APP_NAME}/pkg
 CODE_GEN_INPUT  := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
 CODE_GEN_OUTPUT := ${CODE_GEN_DIR}/generated
 CODE_GEN_ARGS   := --output-base ${CURRENT_DIR} --go-header-file ${CURRENT_DIR}/${TEMP_DIR}/empty.txt
+CODE_GEN_DEEPC  := zz_generated.deepcopy
 
 all: build test lint
 
@@ -19,12 +20,12 @@ ${TEMP_DIR}:
 
 ${TEMP_DIR}/codegen: ${TEMP_DIR} ${CODE_GEN_SRCS}
 	@touch -a ${TEMP_DIR}/empty.txt
-	"$(GOBIN)/deepcopy-gen" --input-dirs "${CODE_GEN_INPUT}" -O zz_generated.deepcopy --bounding-dirs "${CODE_GEN_INPUT}" ${CODE_GEN_ARGS}
+	"$(GOBIN)/deepcopy-gen" --input-dirs "${CODE_GEN_INPUT}" -O "${CODE_GEN_DEEPC}" --bounding-dirs "${CODE_GEN_INPUT}" ${CODE_GEN_ARGS}
 	"${GOBIN}/client-gen" --clientset-name "versioned" --input-base "" --input "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/clientset" ${CODE_GEN_ARGS}
 	"${GOBIN}/lister-gen" --input-dirs "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/listers" ${CODE_GEN_ARGS}
 	"${GOBIN}/informer-gen" --input-dirs "${CODE_GEN_INPUT}" --versioned-clientset-package "${CODE_GEN_OUTPUT}/clientset/versioned" --listers-package "${CODE_GEN_OUTPUT}/listers" --output-package "${CODE_GEN_OUTPUT}/informers" ${CODE_GEN_ARGS}
-	@rm -f pkg/apis/${API_PKG}/${API_VERSION}/zz_generated.deepcopy.go
-	@mv ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}/zz_generated.deepcopy.go pkg/apis/${API_PKG}/${API_VERSION}/
+	@rm -f pkg/apis/${API_PKG}/${API_VERSION}/${CODE_GEN_DEEPC}.go
+	@mv ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}/${CODE_GEN_DEEPC}.go pkg/apis/${API_PKG}/${API_VERSION}/
 	@rm -rf pkg/generated
 	@mv ${CODE_GEN_OUTPUT} pkg/
 	@rm -rf github.com
