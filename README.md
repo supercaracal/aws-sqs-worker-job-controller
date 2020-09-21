@@ -16,6 +16,8 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [sample-controller](https://github.com/kubernetes/sample-controller)
 * [job-controller](https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/job/job_controller.go)
 * [cronjob-controller](https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/cronjob/cronjob_controller.go)
+* [apps-types](https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/apps/types.go)
+* [batch-types](https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/batch/types.go)
 * [kustomize](https://github.com/kubernetes-sigs/kustomize)
 * [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 * [operator-sdk](https://github.com/operator-framework/operator-sdk)

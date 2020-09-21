@@ -31,7 +31,9 @@ ${TEMP_DIR}/codegen: ${TEMP_DIR} ${CODE_GEN_SRCS}
 	@rm -rf github.com
 	@touch $@
 
-build: ${TEMP_DIR}/codegen
+codegen: ${TEMP_DIR}/codegen
+
+build: codegen
 	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_NAME}
 
 test:
@@ -57,4 +59,4 @@ run-container:
 clean-image:
 	@docker rmi -f ${APP_NAME}
 
-.PHONY: all build test lint clean build-image lint-image run-container clean-image
+.PHONY: all codegen build test lint clean build-image lint-image run-container clean-image

@@ -1,8 +1,8 @@
 package v1
 
 import (
+	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	jobconfig "k8s.io/kubernetes/pkg/controller/job/config"
 )
 
 // +genclient
@@ -15,18 +15,19 @@ type WorkerJob struct {
 
 	Spec   WorkerJobSpec   `json:"spec"`
 	Status WorkerJobStatus `json:"status"`
-
-	JobSpec jobconfig.JobControllerConfiguration
 }
 
 // WorkerJobSpec is
 type WorkerJobSpec struct {
-	Queue string `json:"queue"`
+	QueueName                  string `json:"queueName"`
+	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
+	FailedJobsHistoryLimit     *int32 `json:"failedJobsHistoryLimit,omitempty"`
+	//JobTemplate                batchv1.JobTemplateSpec `json:"jobTemplate"`
 }
 
 // WorkerJobStatus is
 type WorkerJobStatus struct {
-	AvailableWorkers int32 `json:"availableWorkers"`
+	RegisteredWorkers int32 `json:"registeredWorkers"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

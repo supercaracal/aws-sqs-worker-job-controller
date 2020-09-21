@@ -16,4 +16,4 @@ spec:
           properties:
             queue:
               type: string
-              pattern: '^[a-zA-Z_-]{1,80}$'
+              pattern: '^[a-zA-Z0-9._-]{1,80}$'
