@@ -67,7 +67,7 @@ func main() {
 
 	customInformerFactory.Start(stopCh)
 
-	if err = customController.Run(1, stopCh); err != nil {
+	if err = customController.Run(stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())
 	}
 }

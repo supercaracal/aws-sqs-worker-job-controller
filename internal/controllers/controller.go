@@ -85,7 +85,7 @@ func NewController(
 }
 
 // Run is
-func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
+func (c *Controller) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workQueue.ShutDown()
 
@@ -97,15 +97,14 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 
 	klog.Info("Starting workers")
 	w := workers.NewControllerWorker(
-		controller.kubeClientSet,
-		controller.customClientSet,
+		c.kubeClientSet,
+		c.customClientSet,
 		c.workerJobLister,
 		c.workQueue,
 		c.record,
 	)
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(w.RunWorker, time.Second, stopCh)
-	}
+
+	go wait.Until(w.RunWorker, time.Second, stopCh)
 
 	klog.Info("Started workers")
 	<-stopCh

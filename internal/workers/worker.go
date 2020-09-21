@@ -31,8 +31,6 @@ const (
 	MessageResourceSynced = "WorkerJob synced successfully"
 )
 
-// @see https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/job/job_controller.go
-
 // ControllerWorker is
 type ControllerWorker struct {
 	kubeClientSet   kubernetes.Interface
@@ -59,9 +57,7 @@ func NewControllerWorker(
 	}
 }
 
-// RunWorker is a long-running function that will continually call the
-// processNextWorkItem function in order to read and process a message on the
-// workqueue.
+// RunWorker is
 func (w *ControllerWorker) RunWorker() {
 	for w.processNextWorkItem() {
 	}
