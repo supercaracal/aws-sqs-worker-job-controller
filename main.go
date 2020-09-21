@@ -57,22 +57,33 @@ func main() {
 		klog.Fatalf("Error building custom clientset: %s", err.Error())
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30)
 
-	controller := controllers.NewController(kubeClient, customClient,
-		kubeInformerFactory.Apps().V1().Job(),
-		customInformerFactory.Awssqsworkerjobcontroller().V1().WorkerJobs())
+	customController := controllers.NewController(
+		kubeClient,
+		customClient,
+		customInformerFactory.Awssqsworkerjobcontroller().V1().WorkerJobs(),
+	)
 
-	kubeInformerFactory.Start(stopCh)
 	customInformerFactory.Start(stopCh)
 
-	if err = controller.Run(1, stopCh); err != nil {
+	if err = customController.Run(1, stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())
 	}
 }
 
 func init() {
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(
+		&masterURL,
+		"master",
+		"",
+		"The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.",
+	)
+
+	flag.StringVar(
+		&kubeconfig,
+		"kubeconfig",
+		"",
+		"Path to a kubeconfig. Only required if out-of-cluster.",
+	)
 }
