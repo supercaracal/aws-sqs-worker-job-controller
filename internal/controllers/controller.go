@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -38,7 +39,7 @@ type Controller struct {
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
-	customInformer informers.AwsSqsWorkerJobInfomer) *Controller {
+	customInformer informers.AwsSqsWorkerJobInformer) *Controller {
 
 	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -46,7 +47,7 @@ func NewController(
 	eventBroadcaster.StartStructuredLogging(0)
 	eventBroadcaster.StartRecordingToSink(
 		&typedcorev1.EventSinkImpl{
-			Interface: kubeclientset.CoreV1().Events(""),
+			Interface: kubeClientSet.CoreV1().Events(""),
 		},
 	)
 	recorder := eventBroadcaster.NewRecorder(
@@ -101,7 +102,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 		c.customClientSet,
 		c.customResourceLister,
 		c.workQueue,
-		c.record,
+		c.recorder,
 	)
 
 	go wait.Until(w.RunWorker, time.Second, stopCh)
