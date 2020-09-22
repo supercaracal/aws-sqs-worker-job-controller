@@ -1,8 +1,8 @@
 package v1
 
 import (
-	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	batchv1 "k8s.io/kubernetes/pkg/apis/batch/v1"
 )
 
 // +genclient
@@ -34,7 +34,7 @@ type JobTemplateSpec struct {
 
 // AwsSqsWorkerJobStatus is
 type AwsSqsWorkerJobStatus struct {
-	Queues map[string]bool `json:"Queues"`
+	QueueNames []string `json:"queueNames"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

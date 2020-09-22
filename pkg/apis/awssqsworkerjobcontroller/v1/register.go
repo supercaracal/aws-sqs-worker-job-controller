@@ -31,8 +31,8 @@ var (
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&WorkerJob{},
-		&WorkerJobList{},
+		&AwsSqsWorkerJob{},
+		&AwsSqsWorkerJobList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

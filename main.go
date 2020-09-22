@@ -62,7 +62,7 @@ func main() {
 	customController := controllers.NewController(
 		kubeClient,
 		customClient,
-		customInformerFactory.Awssqsworkerjobcontroller().V1().WorkerJobs(),
+		customInformerFactory.Awssqsworkerjobcontroller().V1().AwsSqsWorkerJobs(),
 	)
 
 	customInformerFactory.Start(stopCh)

@@ -26,19 +26,19 @@ const controllerAgentName = "aws-sqs-worker-job-controller"
 
 // Controller is
 type Controller struct {
-	kubeClientSet   kubernetes.Interface
-	customClientSet clientset.Interface
-	workerJobLister listers.WorkerJobLister
-	workerJobSynced cache.InformerSynced
-	workQueue       workqueue.RateLimitingInterface
-	recorder        record.EventRecorder
+	kubeClientSet        kubernetes.Interface
+	customClientSet      clientset.Interface
+	customResourceLister listers.AwsSqsWorkerJobLister
+	customInformerSynced cache.InformerSynced
+	workQueue            workqueue.RateLimitingInterface
+	recorder             record.EventRecorder
 }
 
 // NewController is
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
-	workerJobInformer informers.WorkerJobInfomer) *Controller {
+	customInformer informers.AwsSqsWorkerJobInfomer) *Controller {
 
 	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -58,24 +58,24 @@ func NewController(
 
 	wq := workqueue.NewNamedRateLimitingQueue(
 		workqueue.DefaultControllerRateLimiter(),
-		"WorkerJobs",
+		"AwsSqsWorkerJobs",
 	)
 
 	controller := &Controller{
-		kubeClientSet:   kubeClientSet,
-		customClientSet: customClientSet,
-		workerJobLister: workerJobInformer.Lister(),
-		workerJobSynced: workerJobInformer.Informer().HasSynced,
-		workQueue:       wq,
-		recorder:        recorder,
+		kubeClientSet:        kubeClientSet,
+		customClientSet:      customClientSet,
+		customResourceLister: customInformer.Lister(),
+		customInformerSynced: customInformer.Informer().HasSynced,
+		workQueue:            wq,
+		recorder:             recorder,
 	}
 
 	klog.Info("Setting up event handlers")
 	h := handlers.NewInformerHandler(
-		controller.WorkerJobLister,
+		controller.customResourceLister,
 		controller.workQueue,
 	)
-	workerJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	customInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    h.OnAdd,
 		UpdateFunc: h.OnUpdate,
 		DeleteFunc: h.OnDelete,
@@ -89,9 +89,9 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workQueue.ShutDown()
 
-	klog.Info("Starting WorkJob controller")
+	klog.Info("Starting AwsSqsWorkerJob controller")
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.workerJobSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.customInformerSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -99,7 +99,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	w := workers.NewControllerWorker(
 		c.kubeClientSet,
 		c.customClientSet,
-		c.workerJobLister,
+		c.customResourceLister,
 		c.workQueue,
 		c.record,
 	)

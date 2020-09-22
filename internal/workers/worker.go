@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,34 +27,34 @@ const (
 	// ErrResourceExists is
 	ErrResourceExists = "ErrResourceExists"
 	// MessageResourceExists is
-	MessageResourceExists = "Resource %q already exists and is not managed by WorkerJob"
+	MessageResourceExists = "Resource %q already exists and is not managed by AwsSqsWorkerJob"
 	// MessageResourceSynced is
-	MessageResourceSynced = "WorkerJob synced successfully"
+	MessageResourceSynced = "AwsSqsWorkerJob synced successfully"
 )
 
 // ControllerWorker is
 type ControllerWorker struct {
-	kubeClientSet   kubernetes.Interface
-	customClientSet clientset.Interface
-	workerJobLister listers.WorkerJobLister
-	workQueue       workqueue.RateLimitingInterface
-	recorder        record.EventRecorder
+	kubeClientSet        kubernetes.Interface
+	customClientSet      clientset.Interface
+	customResourceLister listers.AwsSqsWorkerJobLister
+	workQueue            workqueue.RateLimitingInterface
+	recorder             record.EventRecorder
 }
 
 // NewControllerWorker is
 func NewControllerWorker(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
-	workerJobLister listers.WorkerJobLister,
+	customResourceLister listers.AwsSqsWorkerJobLister,
 	workQueue workqueue.RateLimitingInterface,
 	recorder record.EventRecorder,
 ) *ControllerWorker {
 	return &ControllerWorker{
-		kubeClientSet:   kubeClientSet,
-		customClientSet: customClientSet,
-		workerJobLister: workerJobLister,
-		workQueue:       workQueue,
-		recorder:        recorder,
+		kubeClientSet:        kubeClientSet,
+		customClientSet:      customClientSet,
+		customResourceLister: customResourceLister,
+		workQueue:            workQueue,
+		recorder:             recorder,
 	}
 }
 
@@ -107,35 +108,29 @@ func (w *ControllerWorker) syncHandler(key string) error {
 		return nil
 	}
 
-	workerJob, err := w.workerJobLister.WorkerJobs(namespace).Get(name)
+	obj, err := w.customResourceLister.AwsSqsWorkerJobs(namespace).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("workerjob '%s' in work queue no longer exists", key))
+			utilruntime.HandleError(fmt.Errorf("awssqsworkerjob '%s' in work queue no longer exists", key))
 			return nil
 		}
 
 		return err
 	}
 
-	err = w.updateWorkJobStatus(workerJob)
+	err = w.updateCustomResourceStatus(obj)
 	if err != nil {
 		return err
 	}
 
-	w.recorder.Event(workerJob, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	w.recorder.Event(obj, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
-func (w *ControllerWorker) updateWorkJobStatus(
-	workerJob *customapiv1.WorkerJob,
-	deployment *appsv1.Deployment,
-) error {
-	workerJobCopy := workerJob.DeepCopy()
-	workerJobCopy.Status.RegisteredWorkers++
-	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the Foo resource.
-	// UpdateStatus will not allow changes to the Spec of the resource,
-	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := w.customClientSet.AwssqsworkerjobcontrollerV1().WorkerJobs(workerJob.Namespace).Update(context.TODO(), workerJobCopy, metav1.UpdateOptions{})
+func (w *ControllerWorker) updateCustomResourceStatus(obj *customapiv1.AwsSqsWorkerJob) error {
+	cpy := obj.DeepCopy()
+	cpy.Status.QueueNames = append(cpy.Status.QueueNames, obj.Spec.QueueName)
+	_, err := w.customClientSet.AwssqsworkerjobcontrollerV1().AwsSqsWorkerJobs(obj.Namespace).
+		Update(context.TODO(), cpy, metav1.UpdateOptions{})
 	return err
 }

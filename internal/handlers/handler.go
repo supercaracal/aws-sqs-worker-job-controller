@@ -16,35 +16,28 @@ import (
 
 // InformerHandler is
 type InformerHandler struct {
-	workerJobLister listers.WorkerJobLister
-	workQueue       workqueue.RateLimitingInterface
+	customResourceLister listers.AwsSqsWorkerJobLister
+	workQueue            workqueue.RateLimitingInterface
 }
 
 // NewInformerHandler is
 func NewInformerHandler(
-	workerJobLister listers.WorkerJobLister,
+	customResourceLister listers.AwsSqsWorkerJobLister,
 	workQueue workqueue.RateLimitingInterface,
 ) *InformerHandler {
 	return &InformerHandler{
-		workerJobLister: workerJobLister,
-		workQueue:       workQueue,
+		customResourceLister: customResourceLister,
+		workQueue:            workQueue,
 	}
 }
 
 // OnAdd is
 func (h *InformerHandler) OnAdd(obj interface{}) {
-	h.enqueueWorkerJob(obj)
+	h.enqueueCustomResource(obj)
 }
 
 // OnUpdate is
 func (h *InformerHandler) OnUpdate(old, new interface{}) {
-	h.enqueueWorkerJob(new)
-
-	newDepl := new.(*appsv1.Deployment)
-	oldDepl := old.(*appsv1.Deployment)
-	if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-		return
-	}
 	h.handleObject(new)
 }
 
@@ -53,7 +46,7 @@ func (h *InformerHandler) OnDelete(obj interface{}) {
 	h.handleObject(obj)
 }
 
-func (h *InformerHandler) enqueueWorkerJob(obj interface{}) {
+func (h *InformerHandler) enqueueCustomResource(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -87,13 +80,13 @@ func (h *InformerHandler) handleObject(obj interface{}) {
 			return
 		}
 
-		foo, err := h.workerJobLister.WorkerJobs(object.GetNamespace()).Get(ownerRef.Name)
+		obj, err := h.customResourceLister.AwsSqsWorkerJobs(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			klog.V(4).Infof("ignoring orphaned object '%s' of foo '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 
-		h.enqueueWorkerJob(foo)
+		h.enqueueCustomResource(obj)
 		return
 	}
 }
