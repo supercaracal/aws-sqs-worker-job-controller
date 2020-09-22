@@ -19,13 +19,13 @@ type AwsSqsWorkerJob struct {
 
 // AwsSqsWorkerJobSpec is
 type AwsSqsWorkerJobSpec struct {
-	QueueName string              `json:"queueName"`
-	Template  api.PodTemplateSpec `json:"template"`
+	QueueURL string              `json:"queueUrl"`
+	Template api.PodTemplateSpec `json:"template"`
 }
 
 // AwsSqsWorkerJobStatus is
 type AwsSqsWorkerJobStatus struct {
-	QueueNames []string `json:"queueNames"`
+	QueueURLs []string `json:"queueUrls"`
 }
 
 // AwsSqsWorkerJobList is
