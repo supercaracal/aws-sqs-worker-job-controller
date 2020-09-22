@@ -27,5 +27,6 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [Writing Controllers](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md)
 * [Example of how to create and manage Kubernetes Custom Resource Definition.](https://github.com/jinghzhu/KubernetesCRD)
 * [(Japanese) Under the Kubernetes Controller](https://speakerdeck.com/govargo/under-the-kubernetes-controller-36f9b71b-9781-4846-9625-23c31da93014)
+* [(Japanese) Programming Kubernetesを読んで学んだこと](https://go-vargo.hatenablog.com/entry/2019/08/05/201546)
 * [(Japanese) KubernetesのCustom Resource Definition(CRD)とCustom Controller](https://www.sambaiz.net/article/182/)
 * [(Japanese) KubernetesのCRDまわりを整理する](https://qiita.com/cvusk/items/773e222e0971a5391a51)
