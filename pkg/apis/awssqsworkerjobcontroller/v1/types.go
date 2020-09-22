@@ -25,7 +25,7 @@ type AwsSqsWorkerJobSpec struct {
 
 // AwsSqsWorkerJobStatus is
 type AwsSqsWorkerJobStatus struct {
-	QueueURLs []string `json:"queueUrls"`
+	Queues map[string]struct{} `json:"queues"`
 }
 
 // AwsSqsWorkerJobList is

@@ -127,7 +127,7 @@ func (w *ControllerWorker) syncHandler(key string) error {
 
 func (w *ControllerWorker) updateCustomResourceStatus(obj *customapiv1.AwsSqsWorkerJob) error {
 	cpy := obj.DeepCopy()
-	cpy.Status.QueueNames = append(cpy.Status.QueueNames, obj.Spec.QueueName)
+	cpy.Status.Queues[obj.Spec.QueueURL] = struct{}{}
 	_, err := w.customClientSet.AwssqsworkerjobcontrollerV1().AwsSqsWorkerJobs(obj.Namespace).
 		Update(context.TODO(), cpy, metav1.UpdateOptions{})
 	return err
