@@ -24,6 +24,7 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [kustomize](https://github.com/kubernetes-sigs/kustomize)
 * [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 * [operator-sdk](https://github.com/operator-framework/operator-sdk)
+* [Programming Kubernetes](https://www.amazon.com/dp/B07VCPM5VQ/)
 * [Writing Controllers](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md)
 * [Example of how to create and manage Kubernetes Custom Resource Definition.](https://github.com/jinghzhu/KubernetesCRD)
 * [(Japanese) Under the Kubernetes Controller](https://speakerdeck.com/govargo/under-the-kubernetes-controller-36f9b71b-9781-4846-9625-23c31da93014)
