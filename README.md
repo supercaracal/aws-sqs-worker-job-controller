@@ -21,9 +21,7 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [Hit an unsupported type...](https://github.com/kubernetes/gengo/blob/7794989d00002eae09b50e95c3a221245260a20e/examples/deepcopy-gen/generators/deepcopy.go#L843-L886)
 * [Test a weird version/kind embedding format.](https://github.com/kubernetes/apimachinery/blob/714f1137f89bf0ec6d038cf852d7661a1b9c660a/pkg/runtime/testing/types.go#L127-L156)
 * [Command deepcopy-gen](https://godoc.org/k8s.io/gengo/examples/deepcopy-gen)
-* [kustomize](https://github.com/kubernetes-sigs/kustomize)
-* [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-* [operator-sdk](https://github.com/operator-framework/operator-sdk)
+* [Extend the Kubernetes API with CustomResourceDefinitions](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
 * [Programming Kubernetes](https://www.amazon.com/dp/B07VCPM5VQ/)
 * [Writing Controllers](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md)
 * [Example of how to create and manage Kubernetes Custom Resource Definition.](https://github.com/jinghzhu/KubernetesCRD)
@@ -31,3 +29,8 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [(Japanese) Programming Kubernetesを読んで学んだこと](https://go-vargo.hatenablog.com/entry/2019/08/05/201546)
 * [(Japanese) KubernetesのCustom Resource Definition(CRD)とCustom Controller](https://www.sambaiz.net/article/182/)
 * [(Japanese) KubernetesのCRDまわりを整理する](https://qiita.com/cvusk/items/773e222e0971a5391a51)
+
+# See also
+* [kustomize](https://github.com/kubernetes-sigs/kustomize)
+* [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+* [operator-sdk](https://github.com/operator-framework/operator-sdk)
