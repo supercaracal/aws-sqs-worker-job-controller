@@ -2,7 +2,7 @@ package v1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	batchv1 "k8s.io/kubernetes/pkg/apis/batch/v1"
+	batch "k8s.io/kubernetes/pkg/apis/batch"
 )
 
 // +genclient
@@ -29,7 +29,7 @@ type AwsSqsWorkerJobSpec struct {
 // JobTemplateSpec is
 // +k8s:deepcopy-gen=false
 type JobTemplateSpec struct {
-	batchv1.JobTemplateSpec `json:",inline"`
+	batch.JobTemplateSpec `json:",inline"`
 }
 
 // AwsSqsWorkerJobStatus is
