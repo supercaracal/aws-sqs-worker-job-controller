@@ -8,34 +8,41 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// WorkerJob is
-type WorkerJob struct {
+// AwsSqsWorkerJob is
+type AwsSqsWorkerJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   WorkerJobSpec   `json:"spec"`
-	Status WorkerJobStatus `json:"status"`
+	Spec              AwsSqsWorkerJobSpec   `json:"spec"`
+	Status            AwsSqsWorkerJobStatus `json:"status"`
 }
 
-// WorkerJobSpec is
-type WorkerJobSpec struct {
-	QueueName                  string `json:"queueName"`
-	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
-	FailedJobsHistoryLimit     *int32 `json:"failedJobsHistoryLimit,omitempty"`
-	//JobTemplate                batchv1.JobTemplateSpec `json:"jobTemplate"`
+// @see https://github.com/kubernetes/gengo/blob/7794989d00002eae09b50e95c3a221245260a20e/examples/deepcopy-gen/generators/deepcopy.go#L843-L886
+// @see https://github.com/kubernetes/apimachinery/blob/714f1137f89bf0ec6d038cf852d7661a1b9c660a/pkg/runtime/testing/types.go#L127-L156
+// @see https://godoc.org/k8s.io/gengo/examples/deepcopy-gen
+
+// AwsSqsWorkerJobSpec is
+type AwsSqsWorkerJobSpec struct {
+	JobTemplate JobTemplateSpec `json:"jobTemplate"`
+	QueueName   string          `json:"queueName"`
 }
 
-// WorkerJobStatus is
-type WorkerJobStatus struct {
-	RegisteredWorkers int32 `json:"registeredWorkers"`
+// JobTemplateSpec is
+// +k8s:deepcopy-gen=false
+type JobTemplateSpec struct {
+	batchv1.JobTemplateSpec `json:",inline"`
+}
+
+// AwsSqsWorkerJobStatus is
+type AwsSqsWorkerJobStatus struct {
+	Queues map[string]bool `json:"Queues"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// WorkerJobList is
-type WorkerJobList struct {
+// AwsSqsWorkerJobList is
+type AwsSqsWorkerJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []WorkerJob `json:"items"`
+	Items []AwsSqsWorkerJob `json:"items"`
 }
