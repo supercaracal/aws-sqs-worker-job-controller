@@ -25,13 +25,13 @@ $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 * [core-types](https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/types.go)
 * [apps-types](https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/apps/types.go)
 * [batch-types](https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/batch/types.go)
+* [A nice script for import kubernetes module](https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-521493597)
 
 # See also
 * [code-generator](https://github.com/kubernetes/code-generator)
+* [Command deepcopy-gen](https://godoc.org/k8s.io/gengo/examples/deepcopy-gen)
 * [Hit an unsupported type...](https://github.com/kubernetes/gengo/blob/7794989d00002eae09b50e95c3a221245260a20e/examples/deepcopy-gen/generators/deepcopy.go#L843-L886)
 * [Test a weird version/kind embedding format.](https://github.com/kubernetes/apimachinery/blob/714f1137f89bf0ec6d038cf852d7661a1b9c660a/pkg/runtime/testing/types.go#L127-L156)
-* [Command deepcopy-gen](https://godoc.org/k8s.io/gengo/examples/deepcopy-gen)
-* [A nice script for importing kubernetes module](https://github.com/kubernetes/kubernetes/issues/79384#issuecomment-521493597)
 
 # See also
 * [Example of how to create and manage Kubernetes Custom Resource Definition.](https://github.com/jinghzhu/KubernetesCRD)
