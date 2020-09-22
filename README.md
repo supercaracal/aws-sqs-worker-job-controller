@@ -1,4 +1,4 @@
-AWS SQS Worker Controller for Kubernetes
+AWS SQS WorkerJob Controller for Kubernetes
 =================================================
 
 ```
