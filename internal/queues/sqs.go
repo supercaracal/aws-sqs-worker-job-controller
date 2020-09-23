@@ -19,6 +19,21 @@ type MySQS struct {
 	cli *sqs.SQS
 }
 
+// NewMySQS is
+func NewMySQS(region, endpointURL string) (*MySQS, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create AWS client's session: %w", err)
+	}
+
+	config := aws.NewConfig().WithRegion(region)
+	if endpointURL != "" {
+		config = config.WithEndpoint(endpointURL)
+	}
+
+	return &MySQS{cli: sqs.New(sess, config)}, nil
+}
+
 // Dequeue is
 func (s *MySQS) Dequeue(queueURL string) (string, error) {
 	input := sqs.ReceiveMessageInput{
@@ -36,19 +51,4 @@ func (s *MySQS) Dequeue(queueURL string) (string, error) {
 	}
 
 	return output.Messages[0]
-}
-
-// NewMySQS is
-func NewMySQS(region, endpointURL string) (*MySQS, error) {
-	sess, err := session.NewSession()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create AWS client's session: %w", err)
-	}
-
-	config := aws.NewConfig().WithRegion(region)
-	if endpointURL != "" {
-		config = config.WithEndpoint(endpointURL)
-	}
-
-	return &MySQS{cli: sqs.New(sess, config)}, nil
 }

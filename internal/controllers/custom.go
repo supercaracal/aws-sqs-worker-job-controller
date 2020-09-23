@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -104,8 +105,19 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		c.workQueue,
 		c.recorder,
 	)
+	cw, err := workers.NewConsumer(
+		os.Getenv("AWS_REGION"),
+		os.Getenv("AWS_ENDPOINT_URL"),
+		c.kubeClientSet,
+		c.customClientSet,
+		c.customResourceLister,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to initialize consumer worker: %w", err)
+	}
 
-	go wait.Until(rw.Run, time.Second, stopCh)
+	go wait.Until(rw.Run, 5*time.Second, stopCh)
+	go wait.Until(cw.Run, 5*time.Second, stopCh)
 
 	klog.Info("Started workers")
 	<-stopCh
