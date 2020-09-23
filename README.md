@@ -4,6 +4,7 @@ AWS SQS WorkerJob Controller for Kubernetes
 ```
 $ kind create cluster
 $ kubectl config set-cluster kind --server=https://127.0.0.1:40963
+$ go get -u k8s.io/code-generator/...
 $ make build  # take a few minutes...
 $ ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
 ```
