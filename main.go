@@ -58,7 +58,7 @@ func main() {
 
 	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30)
 
-	customController := controllers.NewController(
+	customController := controllers.NewCustomController(
 		kubeClient,
 		customClient,
 		customInformerFactory.Awssqsworkerjobcontroller().V1().AwsSqsWorkerJobs(),

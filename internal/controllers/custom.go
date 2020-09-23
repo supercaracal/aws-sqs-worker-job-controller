@@ -25,8 +25,8 @@ import (
 
 const controllerAgentName = "aws-sqs-worker-job-controller"
 
-// Controller is
-type Controller struct {
+// CustomController is
+type CustomController struct {
 	kubeClientSet        kubernetes.Interface
 	customClientSet      clientset.Interface
 	customResourceLister listers.AwsSqsWorkerJobLister
@@ -35,11 +35,11 @@ type Controller struct {
 	recorder             record.EventRecorder
 }
 
-// NewController is
-func NewController(
+// NewCustomController is
+func NewCustomController(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
-	customInformer informers.AwsSqsWorkerJobInformer) *Controller {
+	customInformer informers.AwsSqsWorkerJobInformer) *CustomController {
 
 	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
@@ -62,7 +62,7 @@ func NewController(
 		"AwsSqsWorkerJobs",
 	)
 
-	controller := &Controller{
+	controller := &CustomController{
 		kubeClientSet:        kubeClientSet,
 		customClientSet:      customClientSet,
 		customResourceLister: customInformer.Lister(),
@@ -86,7 +86,7 @@ func NewController(
 }
 
 // Run is
-func (c *Controller) Run(stopCh <-chan struct{}) error {
+func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workQueue.ShutDown()
 
@@ -97,7 +97,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	}
 
 	klog.Info("Starting workers")
-	w := workers.NewControllerWorker(
+	rw := workers.NewReconciler(
 		c.kubeClientSet,
 		c.customClientSet,
 		c.customResourceLister,
@@ -105,7 +105,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 		c.recorder,
 	)
 
-	go wait.Until(w.RunWorker, time.Second, stopCh)
+	go wait.Until(rw.Run, time.Second, stopCh)
 
 	klog.Info("Started workers")
 	<-stopCh

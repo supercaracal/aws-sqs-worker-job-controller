@@ -30,8 +30,8 @@ const (
 	MessageResourceSynced = "AwsSqsWorkerJob synced successfully"
 )
 
-// ControllerWorker is
-type ControllerWorker struct {
+// Reconciler is
+type Reconciler struct {
 	kubeClientSet        kubernetes.Interface
 	customClientSet      clientset.Interface
 	customResourceLister listers.AwsSqsWorkerJobLister
@@ -39,15 +39,15 @@ type ControllerWorker struct {
 	recorder             record.EventRecorder
 }
 
-// NewControllerWorker is
-func NewControllerWorker(
+// NewReconciler is
+func NewReconciler(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
 	customResourceLister listers.AwsSqsWorkerJobLister,
 	workQueue workqueue.RateLimitingInterface,
 	recorder record.EventRecorder,
-) *ControllerWorker {
-	return &ControllerWorker{
+) *Reconciler {
+	return &Reconciler{
 		kubeClientSet:        kubeClientSet,
 		customClientSet:      customClientSet,
 		customResourceLister: customResourceLister,
@@ -56,13 +56,13 @@ func NewControllerWorker(
 	}
 }
 
-// RunWorker is
-func (w *ControllerWorker) RunWorker() {
+// Run is
+func (w *Reconciler) Run() {
 	for w.processNextWorkItem() {
 	}
 }
 
-func (w *ControllerWorker) processNextWorkItem() bool {
+func (w *Reconciler) processNextWorkItem() bool {
 	obj, shutdown := w.workQueue.Get()
 	if shutdown {
 		return false
@@ -77,7 +77,7 @@ func (w *ControllerWorker) processNextWorkItem() bool {
 	return true
 }
 
-func (w *ControllerWorker) trySyncHandler(obj interface{}) error {
+func (w *Reconciler) trySyncHandler(obj interface{}) error {
 	defer w.workQueue.Done(obj)
 
 	var key string // format: namespace/name
@@ -99,7 +99,7 @@ func (w *ControllerWorker) trySyncHandler(obj interface{}) error {
 	return nil
 }
 
-func (w *ControllerWorker) syncHandler(key string) error {
+func (w *Reconciler) syncHandler(key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
@@ -125,7 +125,7 @@ func (w *ControllerWorker) syncHandler(key string) error {
 	return nil
 }
 
-func (w *ControllerWorker) updateCustomResourceStatus(obj *customapiv1.AwsSqsWorkerJob) error {
+func (w *Reconciler) updateCustomResourceStatus(obj *customapiv1.AwsSqsWorkerJob) error {
 	cpy := obj.DeepCopy()
 	cpy.Status.Queues[obj.Spec.QueueURL] = struct{}{}
 	_, err := w.customClientSet.AwssqsworkerjobcontrollerV1().AwsSqsWorkerJobs(obj.Namespace).
