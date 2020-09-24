@@ -2,7 +2,6 @@ package queues
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -11,7 +10,7 @@ import (
 
 const (
 	dequeueSize = 1
-	waitTimeout = 5
+	waitTimeout = 0 // Don't block the loop
 )
 
 // MySQS is
@@ -42,13 +41,18 @@ func (s *MySQS) Dequeue(queueURL string) (string, error) {
 		WaitTimeSeconds:     aws.Int64(waitTimeout),
 	}
 
-	output, err = s.cli.ReceiveMessage(&input)
+	output, err := s.cli.ReceiveMessage(&input)
 	if err != nil {
-		return fmt.Errorf("Failed to receive message from AWS SQS: %w", err)
-	}
-	if len(output.Messages) != dequeueSize {
-		return fmt.Errorf("The queue is empty or something is wrong")
+		return "", fmt.Errorf("Failed to receive message from AWS SQS: %w", err)
 	}
 
-	return output.Messages[0]
+	size := len(output.Messages)
+	if size == 0 {
+		return "", nil
+	}
+	if size > dequeueSize {
+		return "", fmt.Errorf("Failed to receive a message from AWS SQS")
+	}
+
+	return output.Messages[0].Body, nil
 }

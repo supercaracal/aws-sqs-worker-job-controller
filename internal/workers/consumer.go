@@ -2,126 +2,100 @@ package workers
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/pager"
+	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
 	"github.com/supercaracal/aws-sqs-worker-job-controller/internal/queues"
+	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller/v1"
 )
 
 // Consumer is
 type Consumer struct {
-	queue                *queues.MessageQueue
-	kubeClientSet        kubernetes.Interface
-	customClientSet      clientset.Interface
-	customResourceLister listers.AwsSqsWorkerJobLister
+	mq     *queues.MessageQueue
+	cli    kubernetes.Interface
+	lister listers.AwsSqsWorkerJobLister
+	wq     workqueue.RateLimitingInterface
 }
 
 // NewConsumer is
 func NewConsumer(
 	region string,
 	endpointURL string,
-	kubeClientSet kubernetes.Interface,
-	customClientSet clientset.Interface,
-	customResourceLister listers.AwsSqsWorkerJobLister,
+	cli kubernetes.Interface,
+	lister listers.AwsSqsWorkerJobLister,
+	wq workqueue.RateLimitingInterface,
 ) (*Consumer, error) {
-	q, err := queues.NewMySQS(region, endpointURL)
+
+	mq, err := queues.NewMySQS(region, endpointURL)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Consumer{
-		queue:                q,
-		kubeClientSet:        kubeClientSet,
-		customClientSet:      customClientSet,
-		customResourceLister: customResourceLister,
-	}
+		mq:     mq,
+		cli:    cli,
+		lister: lister,
+		wq:     wq,
+	}, nil
 }
 
 // Run is
 func (c *Consumer) Run() {
-	jobs, err := getJobList(c.kubeClientSet)
+	objs, err := c.lister.List(labels.Everything()).Get(name)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("Failed to extract job list: %v", err))
+		utilruntime.HandleError(fmt.Errorf("Failed to extract custom resource list: %w", err))
 		return
 	}
-	klog.V(4).Infof("Found %d jobs", len(jobs))
 
-	jobsByParent := groupJobsByParent(jobs)
-	klog.V(4).Infof("Found %d groups", len(jobsByParent))
-}
-
-func getJobList(kubeClientSet kubernetes.Interface) ([]batchv1.Job, error) {
-	jobListFunc := func(opts metav1.ListOptions) (runtime.Object, error) {
-		return kubeClientSet.BatchV1().Jobs(metav1.NamespaceAll).List(context.TODO(), opts)
-	}
-
-	jobs := make([]batchv1.Job, 0)
-	err := pager.
-		New(pager.SimplePageFunc(jobListFunc)).
-		EachListItem(context.Background(), metav1.ListOptions{}, func(obj runtime.Object) error {
-			tmp, ok := obj.(*batchv1.Job)
-			if !ok {
-				return fmt.Errorf("expected type *batchv1.Job, got type %T", tmp)
-			}
-			jobs = append(jobs, *tmp)
-			return nil
-		})
-	if err != nil {
-		return nil, err
-	}
-
-	return jobs, nil
-}
-
-func groupJobsByParent(jobs []batchv1.Job) map[types.UID][]batchv1.Job {
-	jobsByParent := make(map[types.UID][]batchv1.Job)
-	for _, job := range js {
-		parentUID, found := getParentUIDFromJob(job)
-		if !found {
-			klog.V(4).Infof("Unable to get parent uid from job %s in namespace %s", job.Name, job.Namespace)
+	for _, obj := range objs {
+		msg, err := c.mq.Dequeue(obj.Spec.QueueURL)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("Failed to dequeue: %w", err))
 			continue
 		}
-		jobsByParent[parentUID] = append(jobsByParent[parentUID], job)
-	}
-	return jobsByParent
-}
 
-func getParentUIDFromJob(j batchv1.Job) (types.UID, bool) {
-	controllerRef := metav1.GetControllerOf(&j)
-
-	if controllerRef == nil {
-		return types.UID(""), false
-	}
-
-	if controllerRef.Kind != "AwsSqsWorkerJob" {
-		klog.V(4).Infof("Job with non-AwsSqsWorkerJob parent, name %s namespace %s", j.Name, j.Namespace)
-		return types.UID(""), false
-	}
-
-	return controllerRef.UID, true
-}
-
-func syncAll(customClientSet) error {
-	customResourceListFunc := func(opts metav1.ListOptions) (runtime.Object, error) {
-		return customClientSet.BatchV1beta1().CronJobs(metav1.NamespaceAll).List(context.TODO(), opts)
-	}
-
-	err = pager.New(pager.SimplePageFunc(cronJobListFunc)).EachListItem(context.Background(), metav1.ListOptions{}, func(object runtime.Object) error {
-		cj, ok := object.(*batchv1beta1.CronJob)
-		if !ok {
-			return fmt.Errorf("expected type *batchv1beta1.CronJob, got type %T", cj)
+		job := getJobObject(obj, msg)
+		resp, err := c.cli.BatchV1().Jobs(obj.Namespace).
+			Create(context.TODO(), job, metav1.CreateOptions{})
+		if err != nil {
+			klog.Errorf("Unable to make Job from template in %s/%s: %w", obj.Namespace, obj.Name, err)
+			continue
 		}
-		syncOne(cj, jobsByCj[cj.UID], time.Now(), jm.jobControl, jm.cjControl, jm.recorder)
-		cleanupFinishedJobs(cj, jobsByCj[cj.UID], jm.jobControl, jm.cjControl, jm.recorder)
-		return nil
-	})
 
-	return err
+		klog.V(4).Infof("Created Job %s for %s/%s", resp.Name, obj.Namespace, obj.Name)
+		recorder.Eventf(cj, v1.EventTypeNormal, "SuccessfulCreate", "Created job %v", resp.Name)
+	}
+}
+
+func getJobObject(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
+	kind := customapiv1.SchemeGroupVersion.WithKind("AwsSqsWorkerJob")
+
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            fmt.Sprintf("%s-generated", obj.Name),
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(obj, kind)},
+		},
+		Spec: batchv1.JobSpec{
+			Parallelism:  1,
+			Completions:  1,
+			BackoffLimit: 1,
+		},
+	}
+
+	obj.Spec.Template.DeepCopyInto(&job.Spec.Template)
+	job.Spec.Template.Containers[0].Args = strings.Split(msg, " ")
+
+	return job, nil
 }

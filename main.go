@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
@@ -56,14 +57,17 @@ func main() {
 		klog.Fatalf("Error building custom clientset: %s", err.Error())
 	}
 
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30)
 
 	customController := controllers.NewCustomController(
 		kubeClient,
 		customClient,
+		kubeInformerFactory.Batch().V1().Jobs(),
 		customInformerFactory.Awssqsworkerjobcontroller().V1().AwsSqsWorkerJobs(),
 	)
 
+	kubeInformerFactory.Start(stopCh)
 	customInformerFactory.Start(stopCh)
 
 	if err = customController.Run(stopCh); err != nil {
