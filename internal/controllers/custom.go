@@ -104,6 +104,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	rw := workers.NewReconciler(
 		c.kubeClientSet,
 		c.customClientSet,
+		c.jobLister,
 		c.customResourceLister,
 		c.workQueue,
 		c.recorder,
@@ -112,8 +113,8 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		os.Getenv("AWS_REGION"),
 		os.Getenv("AWS_ENDPOINT_URL"),
 		c.kubeClientSet,
-		c.jobLister,
 		c.customResourceLister,
+		c.workQueue,
 		c.recorder,
 	)
 	if err != nil {

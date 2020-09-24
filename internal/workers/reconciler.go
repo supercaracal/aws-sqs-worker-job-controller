@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	batchlisters "k8s.io/client-go/listers/batch/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -52,7 +55,7 @@ func NewReconciler(
 	return &Reconciler{
 		kubeClientSet:        kubeClientSet,
 		customClientSet:      customClientSet,
-		jobLister:            batchlisters.JobLister,
+		jobLister:            jobLister,
 		customResourceLister: customResourceLister,
 		workQueue:            workQueue,
 		recorder:             recorder,
@@ -61,7 +64,7 @@ func NewReconciler(
 
 // Run is
 func (r *Reconciler) Run() {
-	for c.processNextWorkItem() {
+	for r.processNextWorkItem() {
 	}
 }
 
@@ -81,7 +84,7 @@ func (r *Reconciler) processNextWorkItem() bool {
 }
 
 func (r *Reconciler) tryCleanupFinishedJobs(obj interface{}) error {
-	defer c.workQueue.Done(obj)
+	defer r.workQueue.Done(obj)
 
 	var key string
 	var ok bool
@@ -122,7 +125,7 @@ func (r *Reconciler) cleanupFinishedJobs(key string) error {
 		return err
 	}
 
-	children, err := r.jobLister.Jobs(namespace)
+	children, err := r.jobLister.Jobs(namespace).List(labels.Everything())
 	if errors.IsNotFound(err) {
 		utilruntime.HandleError(fmt.Errorf("there is no jobs for custom resource '%s'", key))
 		return nil
@@ -138,7 +141,7 @@ func (r *Reconciler) cleanupFinishedJobs(key string) error {
 	lastChild := getLastFinishedChild(ownedChildren)
 	r.updateCustomResourceStatus(parent, lastChild)
 
-	if empty := deleteChildren(ownedChildren, parent); !empty {
+	if empty := r.deleteChildren(ownedChildren, parent); !empty {
 		r.workQueue.Add(key)
 		return nil
 	}
@@ -151,10 +154,10 @@ func (r *Reconciler) updateCustomResourceStatus(
 	child *batchv1.Job,
 ) error {
 
-	cpy := obj.DeepCopy()
+	cpy := parent.DeepCopy()
 	cpy.Status.StartTime = child.Status.StartTime
 	cpy.Status.CompletionTime = child.Status.CompletionTime
-	if _, finishedStatus := getFinishedStatus(&child); finishedStatus == batchv1.JobComplete {
+	if _, finishedStatus := getFinishedStatus(child); finishedStatus == batchv1.JobComplete {
 		cpy.Status.Succeeded = true
 	} else {
 		cpy.Status.Succeeded = false
@@ -168,26 +171,27 @@ func (r *Reconciler) updateCustomResourceStatus(
 }
 
 func (r *Reconciler) deleteChildren(
-	children []batchv1.Job,
+	children []*batchv1.Job,
 	parent *customapiv1.AwsSqsWorkerJob,
 ) bool {
 
 	var empty bool = true
 
 	for _, child := range children {
-		isFinished, _ := getFinishedStatus(&child)
+		isFinished, _ := getFinishedStatus(child)
 		if !isFinished {
 			empty = false
 			continue
 		}
 
+		background := metav1.DeletePropagationBackground
 		err := r.kubeClientSet.BatchV1().Jobs(child.Namespace).Delete(
 			context.TODO(),
 			child.Name,
-			metav1.DeleteOptions{PropagationPolicy: &metav1.DeletePropagationBackground},
+			metav1.DeleteOptions{PropagationPolicy: &background},
 		)
 		if err != nil {
-			r.recorder.Eventf(parent, v1.EventTypeWarning, "FailedDelete", "Deleted job: %v", err)
+			r.recorder.Eventf(parent, corev1.EventTypeWarning, "FailedDelete", "Deleted job: %v", err)
 			klog.Errorf(
 				"Error deleting job %s from %s/%s: %v",
 				child.Name,
@@ -197,14 +201,14 @@ func (r *Reconciler) deleteChildren(
 			)
 			empty = false
 		}
-		recorder.Eventf(parent, v1.EventTypeNormal, "SuccessfulDelete", "Deleted job %v", child.Name)
+		r.recorder.Eventf(parent, corev1.EventTypeNormal, "SuccessfulDelete", "Deleted job %v", child.Name)
 	}
 
 	return empty
 }
 
-func extractOwnedChildren(children []batchv1.Job, parent *customapiv1.AwsSqsWorkerJob) []batchv1.Job {
-	ownedChildren := []batchv1.Job{}
+func extractOwnedChildren(children []*batchv1.Job, parent *customapiv1.AwsSqsWorkerJob) []*batchv1.Job {
+	ownedChildren := []*batchv1.Job{}
 
 	for _, child := range children {
 		if metav1.IsControlledBy(child, parent) {
@@ -215,22 +219,22 @@ func extractOwnedChildren(children []batchv1.Job, parent *customapiv1.AwsSqsWork
 	return ownedChildren
 }
 
-func getLastFinishedChild() *batchv1.Job {
+func getLastFinishedChild(children []*batchv1.Job) *batchv1.Job {
 	var last *batchv1.Job = nil
 
 	for _, child := range children {
-		isFinished, _ := getFinishedStatus(&child)
+		isFinished, _ := getFinishedStatus(child)
 		if !isFinished {
 			continue
 		}
 		if last == nil {
-			last = &child
+			last = child
 			continue
 		}
-		if last.Status.StartTime > child.Status.StartTime {
+		if child.Status.StartTime.Before(last.Status.StartTime) {
 			continue
 		}
-		last = &child
+		last = child
 	}
 
 	return last
@@ -238,7 +242,7 @@ func getLastFinishedChild() *batchv1.Job {
 
 func getFinishedStatus(child *batchv1.Job) (bool, batchv1.JobConditionType) {
 	for _, c := range child.Status.Conditions {
-		if (c.Type == batchv1.JobComplete || c.Type == batchv1.JobFailed) && c.Status == v1.ConditionTrue {
+		if (c.Type == batchv1.JobComplete || c.Type == batchv1.JobFailed) && c.Status == corev1.ConditionTrue {
 			return true, c.Type
 		}
 	}

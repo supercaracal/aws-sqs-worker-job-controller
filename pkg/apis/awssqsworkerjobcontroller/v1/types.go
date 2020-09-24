@@ -1,8 +1,8 @@
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	api "k8s.io/kubernetes/pkg/apis/core"
 )
 
 // +genclient
@@ -19,8 +19,8 @@ type AwsSqsWorkerJob struct {
 
 // AwsSqsWorkerJobSpec is
 type AwsSqsWorkerJobSpec struct {
-	QueueURL string              `json:"queueUrl"`
-	Template api.PodTemplateSpec `json:"template"`
+	QueueURL string                 `json:"queueUrl"`
+	Template corev1.PodTemplateSpec `json:"template"`
 }
 
 // AwsSqsWorkerJobStatus is

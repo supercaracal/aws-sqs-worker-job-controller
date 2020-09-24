@@ -7,6 +7,7 @@ import (
 	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -72,20 +73,20 @@ func (c *Consumer) Run() {
 			continue
 		}
 
-		enqueueCustomResource(c.wq, obj)
+		c.enqueueCustomResource(obj)
 
-		job, err := createJobResource(obj, msg)
+		job, err := c.createJobResource(obj, msg)
 		if err != nil {
-			klog.Errorf("Unable to make Job from template in %s/%s: %w", obj.Namespace, obj.Name, err)
+			klog.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err)
 			continue
 		}
 
 		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
-		c.rec.Eventf(cj, v1.EventTypeNormal, "SuccessfulCreate", "Created job %v", job.Name)
+		c.rec.Eventf(obj, corev1.EventTypeNormal, "SuccessfulCreate", "Created job %v", job.Name)
 	}
 }
 
-func enqueueCustomResource(wq workqueue.RateLimitingInterface, obj interface{}) {
+func (c *Consumer) enqueueCustomResource(obj interface{}) {
 	var key string
 	var err error
 
@@ -94,10 +95,10 @@ func enqueueCustomResource(wq workqueue.RateLimitingInterface, obj interface{}) 
 		return
 	}
 
-	wq.Add(key)
+	c.wq.Add(key)
 }
 
-func createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
+func (c *Consumer) createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
 	return c.cli.BatchV1().Jobs(obj.Namespace).Create(
 		context.TODO(),
 		getJobTemplate(obj, msg),
@@ -106,6 +107,7 @@ func createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.J
 }
 
 func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
+	var one int32 = 1
 	kind := customapiv1.SchemeGroupVersion.WithKind("AwsSqsWorkerJob")
 
 	job := &batchv1.Job{
@@ -114,14 +116,14 @@ func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(obj, kind)},
 		},
 		Spec: batchv1.JobSpec{
-			Parallelism:  1,
-			Completions:  1,
-			BackoffLimit: 1,
+			Parallelism:  &one,
+			Completions:  &one,
+			BackoffLimit: &one,
 		},
 	}
 
 	obj.Spec.Template.DeepCopyInto(&job.Spec.Template)
-	job.Spec.Template.Containers[0].Args = strings.Split(msg, " ")
+	job.Spec.Template.Spec.Containers[0].Args = strings.Split(msg, " ")
 
-	return job, nil
+	return job
 }
