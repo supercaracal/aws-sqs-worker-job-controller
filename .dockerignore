@@ -1,0 +1,11 @@
+.git
+_tmp
+config
+github.com
+aws-sqs-worker-job-controller
+go_mod_replace.sh
+.dockerignore
+.env
+.gitignore
+Dockerfile
+README.md
