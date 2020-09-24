@@ -79,10 +79,7 @@ func NewCustomController(
 	}
 
 	klog.Info("Setting up event handlers")
-	h := handlers.NewInformerHandler(
-		controller.customResourceLister,
-		controller.workQueue,
-	)
+	h := handlers.NewInformerHandler()
 	customInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    h.OnAdd,
 		UpdateFunc: h.OnUpdate,
@@ -99,7 +96,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 
 	klog.Info("Starting AwsSqsWorkerJob controller")
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.customInformerSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.jobSynced, c.customInformerSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -115,8 +112,8 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		os.Getenv("AWS_REGION"),
 		os.Getenv("AWS_ENDPOINT_URL"),
 		c.kubeClientSet,
+		c.jobLister,
 		c.customResourceLister,
-		c.workQueue,
 		c.recorder,
 	)
 	if err != nil {
@@ -124,7 +121,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	}
 
 	go wait.Until(rw.Run, 10*time.Second, stopCh)
-	go wait.Until(cw.Run, 5*time.Second, stopCh)
+	go wait.Until(cw.Run, 10*time.Second, stopCh)
 
 	klog.Info("Started workers")
 	<-stopCh

@@ -13,13 +13,13 @@ const (
 	waitTimeout = 0 // Don't block the loop
 )
 
-// MySQS is
-type MySQS struct {
+// SQSClient is
+type SQSClient struct {
 	cli *sqs.SQS
 }
 
-// NewMySQS is
-func NewMySQS(region, endpointURL string) (*MySQS, error) {
+// NewSQSClient is
+func NewSQSClient(region, endpointURL string) (*SQSClient, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create AWS client's session: %w", err)
@@ -30,11 +30,11 @@ func NewMySQS(region, endpointURL string) (*MySQS, error) {
 		config = config.WithEndpoint(endpointURL)
 	}
 
-	return &MySQS{cli: sqs.New(sess, config)}, nil
+	return &SQSClient{cli: sqs.New(sess, config)}, nil
 }
 
 // Dequeue is
-func (s *MySQS) Dequeue(queueURL string) (string, error) {
+func (s *SQSClient) Dequeue(queueURL string) (string, error) {
 	input := sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queueURL),
 		MaxNumberOfMessages: aws.Int64(dequeueSize),
@@ -54,5 +54,5 @@ func (s *MySQS) Dequeue(queueURL string) (string, error) {
 		return "", fmt.Errorf("Failed to receive a message from AWS SQS")
 	}
 
-	return output.Messages[0].Body, nil
+	return *output.Messages[0].Body, nil
 }

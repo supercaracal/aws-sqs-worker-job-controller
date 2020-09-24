@@ -25,7 +25,9 @@ type AwsSqsWorkerJobSpec struct {
 
 // AwsSqsWorkerJobStatus is
 type AwsSqsWorkerJobStatus struct {
-	Queues map[string]struct{} `json:"queues"`
+	StartTime      *metav1.Time
+	CompletionTime *metav1.Time
+	Succeeded      bool
 }
 
 // AwsSqsWorkerJobList is
