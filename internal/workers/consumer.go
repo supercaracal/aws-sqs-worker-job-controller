@@ -14,6 +14,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/pager"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
@@ -27,6 +28,7 @@ type Consumer struct {
 	cli    kubernetes.Interface
 	lister listers.AwsSqsWorkerJobLister
 	wq     workqueue.RateLimitingInterface
+	rec    record.EventRecorder
 }
 
 // NewConsumer is
@@ -36,6 +38,7 @@ func NewConsumer(
 	cli kubernetes.Interface,
 	lister listers.AwsSqsWorkerJobLister,
 	wq workqueue.RateLimitingInterface,
+	rec record.EventRecorder,
 ) (*Consumer, error) {
 
 	mq, err := queues.NewMySQS(region, endpointURL)
@@ -48,6 +51,7 @@ func NewConsumer(
 		cli:    cli,
 		lister: lister,
 		wq:     wq,
+		rec:    rec,
 	}, nil
 }
 
@@ -65,21 +69,30 @@ func (c *Consumer) Run() {
 			utilruntime.HandleError(fmt.Errorf("Failed to dequeue: %w", err))
 			continue
 		}
+		if msg == "" {
+			continue
+		}
 
-		job := getJobObject(obj, msg)
-		resp, err := c.cli.BatchV1().Jobs(obj.Namespace).
-			Create(context.TODO(), job, metav1.CreateOptions{})
+		job, err := createJobResource(obj, msg)
 		if err != nil {
 			klog.Errorf("Unable to make Job from template in %s/%s: %w", obj.Namespace, obj.Name, err)
 			continue
 		}
 
-		klog.V(4).Infof("Created Job %s for %s/%s", resp.Name, obj.Namespace, obj.Name)
-		recorder.Eventf(cj, v1.EventTypeNormal, "SuccessfulCreate", "Created job %v", resp.Name)
+		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
+		rec.Eventf(cj, v1.EventTypeNormal, "SuccessfulCreate", "Created job %v", job.Name)
 	}
 }
 
-func getJobObject(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
+func createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
+	return c.cli.BatchV1().Jobs(obj.Namespace).Create(
+		context.TODO(),
+		getJobTemplate(obj, msg),
+		metav1.CreateOptions{},
+	)
+}
+
+func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
 	kind := customapiv1.SchemeGroupVersion.WithKind("AwsSqsWorkerJob")
 
 	job := &batchv1.Job{

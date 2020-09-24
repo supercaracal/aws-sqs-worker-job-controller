@@ -117,6 +117,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		c.kubeClientSet,
 		c.customResourceLister,
 		c.workQueue,
+		c.recorder,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to initialize consumer worker: %w", err)
