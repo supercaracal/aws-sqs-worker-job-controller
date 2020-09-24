@@ -22,17 +22,6 @@ import (
 	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
 )
 
-const (
-	// SuccessSynced is
-	SuccessSynced = "Synced"
-	// ErrResourceExists is
-	ErrResourceExists = "ErrResourceExists"
-	// MessageResourceExists is
-	MessageResourceExists = "Resource %q already exists and is not managed by AwsSqsWorkerJob"
-	// MessageResourceSynced is
-	MessageResourceSynced = "AwsSqsWorkerJob synced successfully"
-)
-
 // Reconciler is
 type Reconciler struct {
 	kubeClientSet        kubernetes.Interface
@@ -52,6 +41,7 @@ func NewReconciler(
 	workQueue workqueue.RateLimitingInterface,
 	recorder record.EventRecorder,
 ) *Reconciler {
+
 	return &Reconciler{
 		kubeClientSet:        kubeClientSet,
 		customClientSet:      customClientSet,
