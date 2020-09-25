@@ -24,8 +24,6 @@ spec:
               value: "us-west-2"
             - name: DEBUG
               value: "1"
-            - name: HOSTNAME
-              value: "localstack-service.default.svc.cluster.local"
             - name: FORCE_NONINTERACTIVE
               value: "1"
           ports:
