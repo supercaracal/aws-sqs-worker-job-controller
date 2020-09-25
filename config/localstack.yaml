@@ -15,8 +15,8 @@ spec:
         app: localstack
     spec:
       containers:
-        - name: localstack-container:latest
-          image: localstack/localstack
+        - name: localstack-container
+          image: localstack/localstack:latest
           env:
             - name: SERVICES
               value: "sqs"

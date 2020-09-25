@@ -61,9 +61,9 @@ clean-image:
 	@docker rmi -f ${APP_NAME}
 
 apply-manifests:
-	kubectl apply -f config/localstack.yaml
-	kubectl apply -f config/aws-sqs-worker-job-controller.yaml
-	kubectl apply -f config/crd.yaml
-	kubectl apply -f config/sleep-awssqsworkerjob.yaml
+	@kubectl apply -f config/localstack.yaml
+	@kubectl apply -f config/aws-sqs-worker-job-controller.yaml
+	@kubectl apply -f config/crd.yaml
+	@kubectl apply -f config/sleep-awssqsworkerjob.yaml
 
 .PHONY: all codegen build test lint clean build-image lint-image run-container clean-image

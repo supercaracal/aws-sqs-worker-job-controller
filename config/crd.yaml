@@ -20,6 +20,8 @@ spec:
               properties:
                 queueUrl:
                   type: string
+                template:
+                  type: object
   scope: Namespaced
   names:
     kind: AwsSqsWorkerJob
