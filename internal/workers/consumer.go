@@ -57,7 +57,7 @@ func NewConsumer(
 
 // Run is
 func (c *Consumer) Run() {
-	objs, err := c.lister.List(labels.Everything())
+	objs, err := c.lister.AwsSqsWorkerJobs(metav1.NamespaceAll).List(labels.Everything())
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Failed to extract custom resource list: %w", err))
 		return

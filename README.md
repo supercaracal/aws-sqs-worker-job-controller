@@ -9,21 +9,25 @@ The custom controller aims at handling worker job resources for queueing.
 $ docker pull ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
 ```
 
-# Local Kubernetes
+# Kubernetes
 
 ```
 $ kind create cluster
 $ kubectl cluster-info --context kind-kind
 $ make apply-manifests
 $ kubectl port-forward service/localstack-service 4566:4566
-$ aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name sleep-queue
+```
+
+```
+$ aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name=sleep-queue
 {
     "QueueUrl": "http://localhost:4566/000000000000/sleep-queue"
 }
-$ aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://localhost:4566/000000000000/sleep-queue --message-body 30
+$ aws --endpoint-url=http://localhost:4566 --region=us-west-2 sqs send-message --queue-url=http://localhost:4566/000000000000/sleep-queue --message-body=30
+$ aws --endpoint-url=http://localhost:4566 --region=us-west-2 sqs get-queue-attributes --queue-url=http://localhost:4566/000000000000/sleep-queue --attribute-names=ApproximateNumberOfMessages
 ```
 
-# Local development
+# Development
 
 ```
 $ go get -u golang.org/x/lint/golint k8s.io/code-generator/...
