@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: aws-sqs-worker-job-controller-deployment
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:
