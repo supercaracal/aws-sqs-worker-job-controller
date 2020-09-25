@@ -15,7 +15,8 @@ $ docker pull ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
 $ kind create cluster
 $ kubectl cluster-info --context kind-kind
 $ make apply-manifests
-$ aws --endpoint-url=http://localstack-service.default.svc.cluster.local:4566 sqs create-queue --queue-name sleep-queue
+$ kubectl port-forward service/localstack-service 4566:4566
+$ aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name sleep-queue
 ```
 
 # Local development
