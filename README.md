@@ -3,12 +3,26 @@ AWS SQS WorkerJob Controller for Kubernetes ![](https://github.com/supercaracal/
 
 The custom controller aims at handling worker job resources for queueing.
 
+# Docker
+
+```
+$ docker pull ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
+```
+
+# Local Kubernetes
+
 ```
 $ kind create cluster
-$ kubectl config set-cluster kind --server=https://127.0.0.1:40963
-$ go get -u k8s.io/code-generator/...
-$ make build  # take a few minutes...
-$ AWS_REGION=us-west-2 AWS_ENDPOINT_URL=http://TODO:4566 ./aws-sqs-worker-job-controller -kubeconfig=$HOME/.kube/config
+$ kubectl cluster-info --context kind-kind
+$ make apply-manifests
+$ aws --endpoint-url=http://localstack-service.default.svc.cluster.local:4566 sqs create-queue --queue-name sleep-queue
+```
+
+# Local development
+
+```
+$ go get -u golang.org/x/lint/golint k8s.io/code-generator/...
+$ make build
 ```
 
 # See also

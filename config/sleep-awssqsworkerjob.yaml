@@ -1,0 +1,16 @@
+---
+apiVersion: awssqsworkerjobcontroller.k8s.io/v1
+kind: AwsSqsWorkerJob
+metadata:
+  name: sleep-awssqsworkerjob
+spec:
+  queueUrl: "http://localstack-service.default.svc.cluster.local:4566/queue/sleep-queue"
+  template:
+    spec:
+      containers:
+        - name: sleeper
+          image: alpine:lastest
+          command:
+            - "sleep"
+          args:
+            - "180" # default

@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-sqs-worker-job-controller-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-sqs-worker-job-controller
+  template:
+    metadata:
+      labels:
+        app: aws-sqs-worker-job-controller
+    spec:
+      containers:
+        - name: aws-sqs-worker-job-controller-container
+          image: ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
+          env:
+            - name: AWS_REGION
+              value: "us-west-2"
+            - name: AWS_ENDPOINT_URL
+              value: "http://localstack-service.default.svc.cluster.local:4566"
+            - name: AWS_ACCESS_KEY_ID
+              value: "AAAAAAAAAAAAAAAAAAAA"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "0000000000000000000000000000000000000000"

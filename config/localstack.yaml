@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: localstack-statefulset
+spec:
+  serviceName: localstack-statefulset
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack-container:latest
+          image: localstack/localstack
+          env:
+            - name: SERVICES
+              value: "sqs"
+            - name: DEFAULT_REGION
+              value: "us-west-2"
+            - name: DEBUG
+              value: "1"
+            - name: HOSTNAME
+              value: "localstack-service.default.svc.cluster.local"
+            - name: FORCE_NONINTERACTIVE
+              value: "1"
+          ports:
+            - containerPort: 4566
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack-service
+spec:
+  type: ClusterIP
+  selector:
+    app: localstack
+  ports:
+    - name: "edge-port"
+      protocol: "TCP"
+      port: 4566
+      targetPort: 4566
