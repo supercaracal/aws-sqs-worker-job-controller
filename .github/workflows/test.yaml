@@ -37,10 +37,11 @@ jobs:
       - name: Print Go env
         run: go env
 
+      - name: Generate several codes
+        run: make codegen
+
       - name: Lint
-        run: |
-          go mod tidy
-          make lint
+        run: make lint
 
       - name: Test
         run: make test
