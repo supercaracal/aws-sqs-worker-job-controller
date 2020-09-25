@@ -34,6 +34,9 @@ jobs:
             golang.org/x/lint/golint\
             k8s.io/code-generator/...
 
+      - name: Print Go env
+        run: go env
+
       - name: Lint
         run: make lint
 
