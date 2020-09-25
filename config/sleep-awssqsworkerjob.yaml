@@ -4,7 +4,7 @@ kind: AwsSqsWorkerJob
 metadata:
   name: sleep-awssqsworkerjob
 spec:
-  queueUrl: "http://localstack-service.default.svc.cluster.local:4566/queue/sleep-queue"
+  queueUrl: "http://localhost:4566/000000000000/sleep-queue"
   template:
     spec:
       containers:

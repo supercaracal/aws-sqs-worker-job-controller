@@ -17,6 +17,10 @@ $ kubectl cluster-info --context kind-kind
 $ make apply-manifests
 $ kubectl port-forward service/localstack-service 4566:4566
 $ aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name sleep-queue
+{
+    "QueueUrl": "http://localhost:4566/000000000000/sleep-queue"
+}
+$ aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://localhost:4566/000000000000/sleep-queue --message-body 30
 ```
 
 # Local development
