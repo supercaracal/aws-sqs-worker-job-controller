@@ -1,5 +1,6 @@
 SHELL           := /bin/bash
-APP_NAME        ?= aws-sqs-worker-job-controller
+APP_NAME        := aws-sqs-worker-job-controller
+APP_BIN_NAME    ?= aws-sqs-worker-job-controller
 API_PKG         := awssqsworkerjobcontroller
 API_VERSION     := v1
 TEMP_DIR        := _tmp
@@ -34,7 +35,7 @@ ${TEMP_DIR}/codegen: ${TEMP_DIR} ${CODE_GEN_SRCS}
 codegen: ${TEMP_DIR}/codegen
 
 build: codegen
-	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_NAME}
+	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_BIN_NAME}
 
 test:
 	go test ./...
