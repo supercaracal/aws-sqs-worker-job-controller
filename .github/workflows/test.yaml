@@ -38,7 +38,9 @@ jobs:
         run: go env
 
       - name: Lint
-        run: make lint
+        run: |
+          go mod tidy
+          make lint
 
       - name: Test
         run: make test
