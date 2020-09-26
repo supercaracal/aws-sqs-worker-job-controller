@@ -26,6 +26,11 @@ import (
 	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
 )
 
+const (
+	defaultHistoryLimit      = 3
+	defaultReconcileDuration = 10 * time.Second
+)
+
 // CustomController is
 type CustomController struct {
 	kubeClientSet        kubernetes.Interface
@@ -36,6 +41,8 @@ type CustomController struct {
 	customInformerSynced cache.InformerSynced
 	workQueue            workqueue.RateLimitingInterface
 	recorder             record.EventRecorder
+	historyLimit         int
+	reconcileDuration    time.Duration
 }
 
 // NewCustomController is
@@ -76,6 +83,8 @@ func NewCustomController(
 		customInformerSynced: customInformer.Informer().HasSynced,
 		workQueue:            wq,
 		recorder:             recorder,
+		historyLimit:         defaultHistoryLimit,
+		reconcileDuration:    defaultReconcileDuration,
 	}
 
 	klog.Info("Setting up event handlers")
@@ -108,6 +117,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		c.customResourceLister,
 		c.workQueue,
 		c.recorder,
+		c.historyLimit,
 	)
 	cw, err := workers.NewConsumer(
 		os.Getenv("AWS_REGION"),
@@ -122,7 +132,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		return fmt.Errorf("failed to initialize consumer worker: %w", err)
 	}
 
-	go wait.Until(rw.Run, 10*time.Second, stopCh)
+	go wait.Until(rw.Run, c.reconcileDuration, stopCh)
 	go wait.Until(cw.Run, 10*time.Second, stopCh)
 
 	klog.Info("Started workers")

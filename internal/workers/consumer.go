@@ -87,7 +87,7 @@ func (c *Consumer) Run() {
 		}
 
 		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
-		c.rec.Eventf(obj, corev1.EventTypeNormal, "SuccessfulCreate", "Created job %v", job.Name)
+		c.rec.Eventf(obj, corev1.EventTypeNormal, "Successful Create", "Created job %v", job.Name)
 
 		c.enqueueCustomResource(obj)
 	}
