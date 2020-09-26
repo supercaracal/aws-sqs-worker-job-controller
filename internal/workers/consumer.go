@@ -106,14 +106,15 @@ func (c *Consumer) enqueueCustomResource(obj interface{}) {
 }
 
 func (c *Consumer) createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
-	return c.cli.BatchV1().Jobs(obj.Namespace).Create(
-		context.TODO(),
-		getJobTemplate(obj, msg),
-		metav1.CreateOptions{},
-	)
+	tpl, err := getJobTemplate(obj, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.cli.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, metav1.CreateOptions{})
 }
 
-func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
+func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
 	var one int32 = 1
 	kind := customapiv1.SchemeGroupVersion.WithKind("AwsSqsWorkerJob")
 
@@ -130,7 +131,11 @@ func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) *batchv1.Job {
 	}
 
 	obj.Spec.Template.DeepCopyInto(&job.Spec.Template)
+	if len(job.Spec.Template.Spec.Containers) == 0 {
+		return nil, fmt.Errorf("failed to copy custom resource data, make sure the OpenAPI schema in your manifest")
+	}
+
 	job.Spec.Template.Spec.Containers[0].Args = strings.Split(msg, " ")
 
-	return job
+	return job, nil
 }

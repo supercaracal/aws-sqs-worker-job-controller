@@ -41,7 +41,7 @@ spec:
       serviceAccountName: sleep-awssqsworkerjob-serviceaccount
       containers:
         - name: sleeper
-          image: alpine:lastest
+          image: alpine:latest
           command:
             - "/bin/sleep"
           args:

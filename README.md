@@ -36,6 +36,7 @@ $ aws --endpoint-url=http://localhost:4566 --region=us-west-2 sqs get-queue-attr
 ```
 $ go get -u golang.org/x/lint/golint k8s.io/code-generator/...
 $ make build
+$ make run
 ```
 
 # See also

@@ -1,4 +1,7 @@
 ---
+# @see https://github.com/kubernetes/apiextensions-apiserver/blob/master/pkg/apis/apiextensions/v1/types.go
+# @see https://github.com/kubernetes/apiextensions-apiserver/blob/master/pkg/apis/apiextensions/types_jsonschema.go
+# @see https://swagger.io/docs/specification/data-models/data-types/
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -8,21 +11,6 @@ metadata:
     "api-approved.kubernetes.io": "https://github.com/kubernetes/kubernetes/pull/78458"
 spec:
   group: awssqsworkerjobcontroller.k8s.io
-  versions:
-    - name: v1
-      served: true
-      storage: true
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            spec:
-              type: object
-              properties:
-                queueUrl:
-                  type: string
-                template:
-                  type: object
   scope: Namespaced
   names:
     kind: AwsSqsWorkerJob
@@ -30,3 +18,82 @@ spec:
     plural: awssqsworkerjobs
     shortNames:
       - aswj
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                queueUrl:
+                  type: string
+                template:
+                  # We cannot store any objects to etcd. The api server prunes them.
+                  # This is a pain in the neck.
+                  type: object
+                  properties:
+                    spec:
+                      type: object
+                      properties:
+                        serviceAccountName:
+                          type: string
+                        containers:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              image:
+                                type: string
+                              command:
+                                type: array
+                                items:
+                                  type: string
+                              args:
+                                type: array
+                                items:
+                                  type: string
+                              env:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    value:
+                                      type: string
+                              resources:
+                                type: object
+                                properties:
+                                  requests:
+                                    type: object
+                                    properties:
+                                      cpu:
+                                        type: string
+                                      memory:
+                                        type: string
+                                  limits:
+                                    type: object
+                                    properties:
+                                      cpu:
+                                        type: string
+                                      memory:
+                                        type: string
+                              securityContext:
+                                type: object
+                                properties:
+                                  readOnlyRootFilesystem:
+                                    type: boolean

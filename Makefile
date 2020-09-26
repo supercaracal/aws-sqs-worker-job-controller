@@ -38,11 +38,21 @@ build: codegen
 	CGO_ENABLED=${CGO_ENABLED} go build -ldflags="-s -w" -trimpath -tags timetzdata -o ${APP_BIN_NAME}
 
 test:
-	go test ./...
+	@go test ./...
 
 lint:
-	go vet ./...
-	golint -set_exit_status ./...
+	@go vet ./...
+	@golint -set_exit_status ./...
+
+run:
+	@AWS_REGION=us-west-2 \
+	AWS_ENDPOINT_URL=http://localhost:4566 \
+	AWS_ACCESS_KEY_ID=AAAAAAAAAAAAAAAAAAAA \
+	AWS_SECRET_ACCESS_KEY=0000000000000000000000000000000000000000 \
+	SELF_NAMESPACE=default \
+	TZ=Asia/Tokyo \
+	./${APP_BIN_NAME} \
+	--kubeconfig=$$HOME/.kube/config
 
 clean:
 	@rm -f ${APP_NAME} main
@@ -66,4 +76,4 @@ apply-manifests:
 	@kubectl apply -f config/crd.yaml
 	@kubectl apply -f config/sleep-awssqsworkerjob.yaml
 
-.PHONY: all codegen build test lint clean build-image lint-image run-container clean-image
+.PHONY: all codegen build test lint run clean build-image lint-image run-container clean-image
