@@ -15,7 +15,9 @@ rules:
   - apiGroups:
       - batch
       - awssqsworkerjobcontroller.k8s.io
+      - ""
     resources:
+      - events
       - jobs
       - awssqsworkerjobs
     verbs:
