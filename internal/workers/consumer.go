@@ -136,6 +136,7 @@ func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job,
 	}
 
 	job.Spec.Template.Spec.Containers[0].Args = strings.Split(msg, " ")
+	job.Spec.Template.Spec.RestartPolicy = "Never"
 
 	return job, nil
 }
