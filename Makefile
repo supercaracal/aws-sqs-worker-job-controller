@@ -13,6 +13,12 @@ CODE_GEN_INPUT  := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
 CODE_GEN_OUTPUT := ${CODE_GEN_DIR}/generated
 CODE_GEN_ARGS   := --output-base ${CURRENT_DIR} --go-header-file ${CURRENT_DIR}/${TEMP_DIR}/empty.txt
 CODE_GEN_DEEPC  := zz_generated.deepcopy
+TZ              ?= Asia/Tokyo
+ENDPOINT_URL    := http://localhost:4566
+REGION          := us-west-2
+BODY            ?= 3
+QUEUE_NAME      := sleep-queue
+QUEUE_URL       := ${ENDPOINT_URL}/000000000000/${QUEUE_NAME}
 
 all: build test lint
 
@@ -50,7 +56,7 @@ run:
 	AWS_ACCESS_KEY_ID=AAAAAAAAAAAAAAAAAAAA \
 	AWS_SECRET_ACCESS_KEY=0000000000000000000000000000000000000000 \
 	SELF_NAMESPACE=default \
-	TZ=Asia/Tokyo \
+	TZ=${TZ} \
 	./${APP_BIN_NAME} \
 	--kubeconfig=$$HOME/.kube/config
 
@@ -76,4 +82,13 @@ apply-manifests:
 	@kubectl apply -f config/crd.yaml
 	@kubectl apply -f config/sleep-awssqsworkerjob.yaml
 
-.PHONY: all codegen build test lint run clean build-image lint-image run-container clean-image
+create-sleep-queue:
+	@aws --endpoint-url=${ENDPOINT_URL} --region=${REGION} sqs create-queue --queue-name=${QUEUE_NAME}
+
+enqueue-sleep-task:
+	@aws --endpoint-url=${ENDPOINT_URL} --region=${REGION} sqs send-message --queue-url=${QUEUE_URL} --message-body=${BODY}
+
+get-sleep-queue-attrs:
+	@aws --endpoint-url=${ENDPOINT_URL} --region=${REGION} sqs get-queue-attributes --queue-url=${QUEUE_URL} | jq .
+
+.PHONY: all codegen build test lint run clean build-image lint-image run-container clean-image create-sleep-queue enqueue-sleep-task get-sleep-queue-attrs
