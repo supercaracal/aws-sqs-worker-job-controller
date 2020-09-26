@@ -91,7 +91,6 @@ func (r *Reconciler) tryCleanupFinishedJobs(obj interface{}) error {
 	}
 
 	r.workQueue.Forget(obj)
-	klog.Infof("Successfully cleaned children '%s'", key)
 
 	return nil
 }
