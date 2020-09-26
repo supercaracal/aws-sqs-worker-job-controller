@@ -6,6 +6,7 @@ AWS SQS Worker Job Controller
 
 This is a custom controller for Kubernetes.
 The controller aims at handling a custom resource as a worker job for queueing.
+A worker job is invoked by the controller with a message of the queue as args when successful dequeuing.
 
 # Docker
 
