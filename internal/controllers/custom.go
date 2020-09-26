@@ -112,6 +112,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	cw, err := workers.NewConsumer(
 		os.Getenv("AWS_REGION"),
 		os.Getenv("AWS_ENDPOINT_URL"),
+		os.Getenv("SELF_NAMESPACE"),
 		c.kubeClientSet,
 		c.customResourceLister,
 		c.workQueue,

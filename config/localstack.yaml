@@ -1,8 +1,39 @@
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: localstack-role
+  namespace: default
+rules: []
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: localstack-serviceaccount
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: localstack-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: localstack-role
+subjects:
+  - kind: ServiceAccount
+    name: localstack-serviceaccount
+    namespace: default
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: localstack-statefulset
+  namespace: default
 spec:
   serviceName: localstack-statefulset
   replicas: 1
@@ -14,6 +45,7 @@ spec:
       labels:
         app: localstack
     spec:
+      serviceAccountName: localstack-serviceaccount
       containers:
         - name: localstack-container
           image: localstack/localstack:latest
@@ -28,11 +60,19 @@ spec:
               value: "1"
           ports:
             - containerPort: 4566
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: localstack-service
+  namespace: default
 spec:
   type: ClusterIP
   selector:

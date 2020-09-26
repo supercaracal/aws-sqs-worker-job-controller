@@ -1,16 +1,56 @@
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sleep-awssqsworkerjob-role
+  namespace: default
+rules: []
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sleep-awssqsworkerjob-serviceaccount
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sleep-awssqsworkerjob-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sleep-awssqsworkerjob-role
+subjects:
+  - kind: ServiceAccount
+    name: sleep-awssqsworkerjob-serviceaccount
+    namespace: default
+
+---
 apiVersion: awssqsworkerjobcontroller.k8s.io/v1
 kind: AwsSqsWorkerJob
 metadata:
   name: sleep-awssqsworkerjob
+  namespace: default
 spec:
   queueUrl: "http://localhost:4566/000000000000/sleep-queue"
   template:
     spec:
+      serviceAccountName: sleep-awssqsworkerjob-serviceaccount
       containers:
         - name: sleeper
           image: alpine:lastest
           command:
-            - "sleep"
+            - "/bin/sleep"
           args:
             - "180" # default
+          resources:
+            requests:
+              memory: 64Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            readOnlyRootFilesystem: true

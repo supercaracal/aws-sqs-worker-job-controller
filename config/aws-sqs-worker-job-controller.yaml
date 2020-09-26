@@ -1,8 +1,47 @@
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aws-sqs-worker-job-controller-role
+  namespace: default
+rules:
+  - apiGroups:
+      - batch
+      - awssqsworkerjobcontroller.k8s.io
+    resources:
+      - jobs
+      - awssqsworkerjobs
+    verbs:
+      - "*"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-sqs-worker-job-controller-serviceaccount
+  namespace: default
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aws-sqs-worker-job-controller-rolebinding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aws-sqs-worker-job-controller-role
+subjects:
+  - kind: ServiceAccount
+    name: aws-sqs-worker-job-controller-serviceaccount
+    namespace: default
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: aws-sqs-worker-job-controller-deployment
+  namespace: default
 spec:
   strategy:
     type: Recreate
@@ -15,6 +54,7 @@ spec:
       labels:
         app: aws-sqs-worker-job-controller
     spec:
+      serviceAccountName: aws-sqs-worker-job-controller-serviceaccount
       containers:
         - name: aws-sqs-worker-job-controller-container
           image: ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
@@ -27,3 +67,13 @@ spec:
               value: "AAAAAAAAAAAAAAAAAAAA"
             - name: AWS_SECRET_ACCESS_KEY
               value: "0000000000000000000000000000000000000000"
+            - name: SELF_NAMESPACE
+              value: "default"
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            readOnlyRootFilesystem: true

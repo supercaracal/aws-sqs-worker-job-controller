@@ -29,17 +29,23 @@ type Consumer struct {
 	lister listers.AwsSqsWorkerJobLister
 	wq     workqueue.RateLimitingInterface
 	rec    record.EventRecorder
+	ns     string
 }
 
 // NewConsumer is
 func NewConsumer(
 	region string,
 	endpointURL string,
+	selfNamespace string,
 	cli kubernetes.Interface,
 	lister listers.AwsSqsWorkerJobLister,
 	wq workqueue.RateLimitingInterface,
 	rec record.EventRecorder,
 ) (*Consumer, error) {
+
+	if selfNamespace == "" {
+		return nil, fmt.Errorf("SELF_NAMESPACE env var requireed")
+	}
 
 	mq, err := queues.NewSQSClient(region, endpointURL)
 	if err != nil {
@@ -52,12 +58,13 @@ func NewConsumer(
 		lister: lister,
 		wq:     wq,
 		rec:    rec,
+		ns:     selfNamespace,
 	}, nil
 }
 
 // Run is
 func (c *Consumer) Run() {
-	objs, err := c.lister.AwsSqsWorkerJobs(metav1.NamespaceAll).List(labels.Everything())
+	objs, err := c.lister.AwsSqsWorkerJobs(c.ns).List(labels.Everything())
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Failed to extract custom resource list: %w", err))
 		return
