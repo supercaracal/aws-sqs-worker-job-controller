@@ -40,7 +40,7 @@ spec:
                   type: string
                 template:
                   # We cannot store any objects to etcd. The api server prunes them.
-                  # This is a pain in the neck.
+                  # It is a pain in the neck.
                   type: object
                   properties:
                     spec:

@@ -79,3 +79,4 @@ $ make run
 * [kustomize](https://github.com/kubernetes-sigs/kustomize)
 * [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 * [operator-sdk](https://github.com/operator-framework/operator-sdk)
+* [localstack](https://github.com/localstack/localstack)
