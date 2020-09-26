@@ -144,6 +144,10 @@ func (r *Reconciler) updateCustomResourceStatus(
 	child *batchv1.Job,
 ) error {
 
+	if child == nil {
+		return nil
+	}
+
 	cpy := parent.DeepCopy()
 	cpy.Status.StartTime = child.Status.StartTime
 	cpy.Status.CompletionTime = child.Status.CompletionTime
