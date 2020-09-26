@@ -80,8 +80,6 @@ func (c *Consumer) Run() {
 			continue
 		}
 
-		c.enqueueCustomResource(obj)
-
 		job, err := c.createJobResource(obj, msg)
 		if err != nil {
 			klog.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err)
@@ -90,19 +88,9 @@ func (c *Consumer) Run() {
 
 		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
 		c.rec.Eventf(obj, corev1.EventTypeNormal, "SuccessfulCreate", "Created job %v", job.Name)
+
+		c.enqueueCustomResource(obj)
 	}
-}
-
-func (c *Consumer) enqueueCustomResource(obj interface{}) {
-	var key string
-	var err error
-
-	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
-		utilruntime.HandleError(err)
-		return
-	}
-
-	c.wq.Add(key)
 }
 
 func (c *Consumer) createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
@@ -112,6 +100,16 @@ func (c *Consumer) createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg strin
 	}
 
 	return c.cli.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, metav1.CreateOptions{})
+}
+
+func (c *Consumer) enqueueCustomResource(obj interface{}) {
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
+		utilruntime.HandleError(err)
+		return
+	}
+
+	c.wq.Add(key)
 }
 
 func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
@@ -132,7 +130,7 @@ func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job,
 
 	obj.Spec.Template.DeepCopyInto(&job.Spec.Template)
 	if len(job.Spec.Template.Spec.Containers) == 0 {
-		return nil, fmt.Errorf("failed to copy custom resource data, make sure the OpenAPI schema in your manifest")
+		return nil, fmt.Errorf("failed to copy custom resource data, make sure the OpenAPI schema in your CRD manifest")
 	}
 
 	job.Spec.Template.Spec.Containers[0].Args = strings.Split(msg, " ")

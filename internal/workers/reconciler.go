@@ -64,7 +64,7 @@ func (r *Reconciler) processNextWorkItem() bool {
 		return false
 	}
 
-	err := r.tryCleanupFinishedJobs(obj)
+	err := r.tryCleanupFinishedChildren(obj)
 	if err != nil {
 		utilruntime.HandleError(err)
 		return true
@@ -73,7 +73,7 @@ func (r *Reconciler) processNextWorkItem() bool {
 	return true
 }
 
-func (r *Reconciler) tryCleanupFinishedJobs(obj interface{}) error {
+func (r *Reconciler) tryCleanupFinishedChildren(obj interface{}) error {
 	defer r.workQueue.Done(obj)
 
 	var key string
@@ -85,7 +85,7 @@ func (r *Reconciler) tryCleanupFinishedJobs(obj interface{}) error {
 		return nil
 	}
 
-	if err := r.cleanupFinishedJobs(key); err != nil {
+	if err := r.cleanupFinishedChildren(key); err != nil {
 		r.workQueue.AddRateLimited(key)
 		return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
 	}
@@ -95,7 +95,7 @@ func (r *Reconciler) tryCleanupFinishedJobs(obj interface{}) error {
 	return nil
 }
 
-func (r *Reconciler) cleanupFinishedJobs(key string) error {
+func (r *Reconciler) cleanupFinishedChildren(key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
