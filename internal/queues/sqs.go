@@ -54,5 +54,24 @@ func (s *SQSClient) Dequeue(queueURL string) (string, error) {
 		return "", fmt.Errorf("Failed to receive a message from AWS SQS")
 	}
 
+	err = s.deleteMessage(aws.String(queueURL), output.Messages[0].ReceiptHandle)
+	if err != nil {
+		return "", err
+	}
+
 	return *output.Messages[0].Body, nil
+}
+
+func (s *SQSClient) deleteMessage(queueURL, identifier *string) error {
+	input := sqs.DeleteMessageInput{
+		QueueUrl:      queueURL,
+		ReceiptHandle: identifier,
+	}
+
+	_, err := s.cli.DeleteMessage(&input)
+	if err != nil {
+		return fmt.Errorf("Failed to delete message from AWS SQS: %w", err)
+	}
+
+	return nil
 }
