@@ -22,6 +22,8 @@ $ make apply-manifests
 $ kubectl port-forward service/localstack-service 4566:4566
 ```
 
+# LocalStack
+
 ```
 $ aws --endpoint-url=http://localhost:4566 --region=us-west-2 sqs create-queue --queue-name=sleep-queue
 {
