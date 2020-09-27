@@ -4,9 +4,14 @@ AWS SQS Worker Job Controller
 ![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Test/badge.svg)
 ![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Docker/badge.svg)
 
-This is a custom controller for Kubernetes.
-The controller aims at handling a custom resource as a worker job for queueing.
-A worker job is invoked by the controller with a message of the queue as args when successful dequeuing.
+This is a custom controller for Kubernetes.  
+The controller aims at handling a custom resource as a worker job for queueing.  
+A worker job is invoked by the controller with a message of the queue as args when successful dequeuing.  
+The custom resource owns `Job` resource.  
+
+```
+Pod <- Job <- AwsSqsWorkerJob
+```
 
 # Docker
 
