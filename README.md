@@ -10,7 +10,7 @@ A worker job is invoked by the controller with a message of the queue as args wh
 Worker jobs are declared by [CRD](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/). The custom resources own `Job` resources.  
 
 ```
-Pod <- Job <- AwsSqsWorkerJob
+Pod <- Job <- AWSSQSWorkerJob
 ```
 
 # Docker

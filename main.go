@@ -64,7 +64,7 @@ func main() {
 		kubeClient,
 		customClient,
 		kubeInformerFactory.Batch().V1().Jobs(),
-		customInformerFactory.Awssqsworkerjobcontroller().V1().AwsSqsWorkerJobs(),
+		customInformerFactory.Awssqsworkerjobcontroller().V1().AWSSQSWorkerJobs(),
 	)
 
 	kubeInformerFactory.Start(stopCh)

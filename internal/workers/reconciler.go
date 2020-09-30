@@ -29,7 +29,7 @@ type Reconciler struct {
 	kubeClientSet        kubernetes.Interface
 	customClientSet      clientset.Interface
 	jobLister            batchlisters.JobLister
-	customResourceLister listers.AwsSqsWorkerJobLister
+	customResourceLister listers.AWSSQSWorkerJobLister
 	workQueue            workqueue.RateLimitingInterface
 	recorder             record.EventRecorder
 	historyLimit         int
@@ -40,7 +40,7 @@ func NewReconciler(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
 	jobLister batchlisters.JobLister,
-	customResourceLister listers.AwsSqsWorkerJobLister,
+	customResourceLister listers.AWSSQSWorkerJobLister,
 	workQueue workqueue.RateLimitingInterface,
 	recorder record.EventRecorder,
 	historyLimit int,
@@ -107,7 +107,7 @@ func (r *Reconciler) cleanupFinishedChildren(key string) error {
 		return nil
 	}
 
-	parent, err := r.customResourceLister.AwsSqsWorkerJobs(namespace).Get(name)
+	parent, err := r.customResourceLister.AWSSQSWorkerJobs(namespace).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			utilruntime.HandleError(
@@ -142,7 +142,7 @@ func (r *Reconciler) cleanupFinishedChildren(key string) error {
 	return nil
 }
 
-func (r *Reconciler) deleteChildren(children []*batchv1.Job, parent *customapiv1.AwsSqsWorkerJob) {
+func (r *Reconciler) deleteChildren(children []*batchv1.Job, parent *customapiv1.AWSSQSWorkerJob) {
 	for _, child := range children {
 		isFinished, _ := utils.GetFinishedStatus(child)
 		if !isFinished {
@@ -157,7 +157,7 @@ func (r *Reconciler) deleteChildren(children []*batchv1.Job, parent *customapiv1
 		)
 
 		if err != nil {
-			r.recorder.Eventf(parent, corev1.EventTypeWarning, "Failed Delete", "Deleted job: %v", err)
+			r.recorder.Eventf(parent, corev1.EventTypeWarning, "Failed Delete", "Tried to deleted job %v", err)
 			klog.Errorf("Error deleting job %s from %s/%s: %v", child.Name, parent.Namespace, parent.Name, err)
 		} else {
 			r.recorder.Eventf(parent, corev1.EventTypeNormal, "Successful Delete", "Deleted job %v", child.Name)
@@ -166,7 +166,7 @@ func (r *Reconciler) deleteChildren(children []*batchv1.Job, parent *customapiv1
 }
 
 func (r *Reconciler) updateCustomResourceStatus(
-	parent *customapiv1.AwsSqsWorkerJob,
+	parent *customapiv1.AWSSQSWorkerJob,
 	child *batchv1.Job,
 ) error {
 
@@ -184,7 +184,7 @@ func (r *Reconciler) updateCustomResourceStatus(
 	}
 
 	_, err := r.customClientSet.AwssqsworkerjobcontrollerV1().
-		AwsSqsWorkerJobs(parent.Namespace).
+		AWSSQSWorkerJobs(parent.Namespace).
 		Update(context.TODO(), cpy, metav1.UpdateOptions{})
 
 	return err

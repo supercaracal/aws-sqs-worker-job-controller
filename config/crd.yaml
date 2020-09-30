@@ -14,7 +14,7 @@ spec:
   group: awssqsworkerjobcontroller.k8s.io
   scope: Namespaced
   names:
-    kind: AwsSqsWorkerJob
+    kind: AWSSQSWorkerJob
     singular: awssqsworkerjob
     plural: awssqsworkerjobs
     shortNames:
@@ -36,7 +36,7 @@ spec:
             spec:
               type: object
               properties:
-                queueUrl:
+                queueURL:
                   type: string
                 template:
                   # We cannot store any objects to etcd. The api server prunes them.

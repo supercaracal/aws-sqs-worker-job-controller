@@ -37,7 +37,7 @@ type CustomController struct {
 	customClientSet      clientset.Interface
 	jobLister            batchlisters.JobLister
 	jobSynced            cache.InformerSynced
-	customResourceLister listers.AwsSqsWorkerJobLister
+	customResourceLister listers.AWSSQSWorkerJobLister
 	customInformerSynced cache.InformerSynced
 	workQueue            workqueue.RateLimitingInterface
 	recorder             record.EventRecorder
@@ -50,7 +50,7 @@ func NewCustomController(
 	kubeClientSet kubernetes.Interface,
 	customClientSet clientset.Interface,
 	jobInformer batchinformers.JobInformer,
-	customInformer informers.AwsSqsWorkerJobInformer,
+	customInformer informers.AWSSQSWorkerJobInformer,
 ) *CustomController {
 
 	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
@@ -71,7 +71,7 @@ func NewCustomController(
 
 	wq := workqueue.NewNamedRateLimitingQueue(
 		workqueue.DefaultControllerRateLimiter(),
-		"AwsSqsWorkerJobs",
+		"AWSSQSWorkerJobs",
 	)
 
 	controller := &CustomController{
@@ -103,7 +103,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workQueue.ShutDown()
 
-	klog.Info("Starting AwsSqsWorkerJob controller")
+	klog.Info("Starting AWSSQSWorkerJob controller")
 	klog.Info("Waiting for informer caches to sync")
 	if ok := cache.WaitForCacheSync(stopCh, c.jobSynced, c.customInformerSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")

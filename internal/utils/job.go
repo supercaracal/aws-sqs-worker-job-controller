@@ -36,7 +36,7 @@ func (aj AscJobs) Less(i, j int) bool {
 }
 
 // ExtractOwnedChildren is
-func ExtractOwnedChildren(children []*batchv1.Job, parent *customapiv1.AwsSqsWorkerJob) []*batchv1.Job {
+func ExtractOwnedChildren(children []*batchv1.Job, parent *customapiv1.AWSSQSWorkerJob) []*batchv1.Job {
 	ownedChildren := []*batchv1.Job{}
 
 	for _, child := range children {

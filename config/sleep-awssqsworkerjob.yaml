@@ -30,12 +30,12 @@ subjects:
 
 ---
 apiVersion: awssqsworkerjobcontroller.k8s.io/v1
-kind: AwsSqsWorkerJob
+kind: AWSSQSWorkerJob
 metadata:
   name: sleep-awssqsworkerjob
   namespace: default
 spec:
-  queueUrl: "http://localhost:4566/000000000000/sleep-queue"
+  queueURL: "http://localhost:4566/000000000000/sleep-queue"
   template:
     spec:
       serviceAccountName: sleep-awssqsworkerjob-serviceaccount

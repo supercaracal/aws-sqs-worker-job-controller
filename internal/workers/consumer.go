@@ -26,7 +26,7 @@ import (
 type Consumer struct {
 	mq     queues.MessageQueue
 	cli    kubernetes.Interface
-	lister listers.AwsSqsWorkerJobLister
+	lister listers.AWSSQSWorkerJobLister
 	wq     workqueue.RateLimitingInterface
 	rec    record.EventRecorder
 	ns     string
@@ -38,7 +38,7 @@ func NewConsumer(
 	endpointURL string,
 	selfNamespace string,
 	cli kubernetes.Interface,
-	lister listers.AwsSqsWorkerJobLister,
+	lister listers.AWSSQSWorkerJobLister,
 	wq workqueue.RateLimitingInterface,
 	rec record.EventRecorder,
 ) (*Consumer, error) {
@@ -64,7 +64,7 @@ func NewConsumer(
 
 // Run is
 func (c *Consumer) Run() {
-	objs, err := c.lister.AwsSqsWorkerJobs(c.ns).List(labels.Everything())
+	objs, err := c.lister.AWSSQSWorkerJobs(c.ns).List(labels.Everything())
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Failed to extract custom resource list: %w", err))
 		return
@@ -93,7 +93,7 @@ func (c *Consumer) Run() {
 	}
 }
 
-func (c *Consumer) createJobResource(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
+func (c *Consumer) createJobResource(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
 	tpl, err := getJobTemplate(obj, msg)
 	if err != nil {
 		return nil, err
@@ -112,9 +112,9 @@ func (c *Consumer) enqueueCustomResource(obj interface{}) {
 	c.wq.Add(key)
 }
 
-func getJobTemplate(obj *customapiv1.AwsSqsWorkerJob, msg string) (*batchv1.Job, error) {
+func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
 	var one int32 = 1
-	kind := customapiv1.SchemeGroupVersion.WithKind("AwsSqsWorkerJob")
+	kind := customapiv1.SchemeGroupVersion.WithKind("AWSSQSWorkerJob")
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{

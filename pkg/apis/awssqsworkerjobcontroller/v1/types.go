@@ -7,34 +7,34 @@ import (
 
 // +genclient
 
-// AwsSqsWorkerJob is
+// AWSSQSWorkerJob is
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AwsSqsWorkerJob struct {
+type AWSSQSWorkerJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AwsSqsWorkerJobSpec   `json:"spec"`
-	Status AwsSqsWorkerJobStatus `json:"status"`
+	Spec   AWSSQSWorkerJobSpec   `json:"spec"`
+	Status AWSSQSWorkerJobStatus `json:"status"`
 }
 
-// AwsSqsWorkerJobSpec is
-type AwsSqsWorkerJobSpec struct {
-	QueueURL string                 `json:"queueUrl"`
+// AWSSQSWorkerJobSpec is
+type AWSSQSWorkerJobSpec struct {
+	QueueURL string                 `json:"queueURL"`
 	Template corev1.PodTemplateSpec `json:"template"`
 }
 
-// AwsSqsWorkerJobStatus is
-type AwsSqsWorkerJobStatus struct {
+// AWSSQSWorkerJobStatus is
+type AWSSQSWorkerJobStatus struct {
 	StartTime      *metav1.Time
 	CompletionTime *metav1.Time
 	Succeeded      bool
 }
 
-// AwsSqsWorkerJobList is
+// AWSSQSWorkerJobList is
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AwsSqsWorkerJobList struct {
+type AWSSQSWorkerJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []AwsSqsWorkerJob `json:"items"`
+	Items []AWSSQSWorkerJob `json:"items"`
 }
