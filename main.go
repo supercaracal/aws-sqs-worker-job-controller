@@ -9,6 +9,7 @@ import (
 
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
@@ -36,13 +37,21 @@ func setupSignalHandler() <-chan struct{} {
 	return stop
 }
 
+func buildConfig(masterURL, kubeconfig string) (*rest.Config, error) {
+	if kubeconfig == "" {
+		return rest.InClusterConfig()
+	}
+
+	return clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+}
+
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 
 	stopCh := setupSignalHandler()
 
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	cfg, err := buildConfig(masterURL, kubeconfig)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
