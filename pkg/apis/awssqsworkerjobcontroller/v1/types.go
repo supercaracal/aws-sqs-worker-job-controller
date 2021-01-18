@@ -19,7 +19,14 @@ type AWSSQSWorkerJob struct {
 
 // AWSSQSWorkerJobSpec is
 type AWSSQSWorkerJobSpec struct {
-	QueueURL string                 `json:"queueURL"`
+	// The URL of the queue which is treated by the controller for tasks.
+	QueueURL string `json:"queueURL"`
+
+	// The number of finished jobs to retain.
+	// +optional
+	HistoryLimit *int32 `json:"historyLimit,omitempty"`
+
+	// Defines pods that will be created from this template.
 	Template corev1.PodTemplateSpec `json:"template"`
 }
 

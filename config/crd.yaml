@@ -38,6 +38,8 @@ spec:
               properties:
                 queueURL:
                   type: string
+                historyLimit:
+                  type: integer
                 template:
                   # We cannot store any objects to etcd. The api server prunes them.
                   # It is a pain in the neck.

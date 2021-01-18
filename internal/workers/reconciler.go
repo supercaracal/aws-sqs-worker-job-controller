@@ -24,6 +24,10 @@ import (
 	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
 )
 
+const (
+	defaultHistoryLimit int32 = 10
+)
+
 // Reconciler is
 type Reconciler struct {
 	kubeClientSet        kubernetes.Interface
@@ -32,7 +36,6 @@ type Reconciler struct {
 	customResourceLister listers.AWSSQSWorkerJobLister
 	workQueue            workqueue.RateLimitingInterface
 	recorder             record.EventRecorder
-	historyLimit         int
 }
 
 // NewReconciler is
@@ -43,7 +46,6 @@ func NewReconciler(
 	customResourceLister listers.AWSSQSWorkerJobLister,
 	workQueue workqueue.RateLimitingInterface,
 	recorder record.EventRecorder,
-	historyLimit int,
 ) *Reconciler {
 
 	return &Reconciler{
@@ -53,7 +55,6 @@ func NewReconciler(
 		customResourceLister: customResourceLister,
 		workQueue:            workQueue,
 		recorder:             recorder,
-		historyLimit:         historyLimit,
 	}
 }
 
@@ -133,9 +134,13 @@ func (r *Reconciler) cleanupFinishedChildren(key string) error {
 	klog.V(4).Infof("Found %d owned jobs", len(ownedChildren))
 
 	sort.Sort(utils.AscJobs(ownedChildren))
-	size := len(ownedChildren)
-	if size > r.historyLimit {
-		r.deleteChildren(ownedChildren[0:size-r.historyLimit], parent)
+	historyLimit := defaultHistoryLimit
+	if parent.Spec.HistoryLimit != nil {
+		historyLimit = *parent.Spec.HistoryLimit
+	}
+	size := int32(len(ownedChildren))
+	if size > historyLimit {
+		r.deleteChildren(ownedChildren[0:size-historyLimit], parent)
 	}
 	r.updateCustomResourceStatus(parent, ownedChildren[size-1])
 

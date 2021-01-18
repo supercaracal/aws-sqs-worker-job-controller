@@ -36,6 +36,7 @@ metadata:
   namespace: default
 spec:
   queueURL: "http://localhost:4566/000000000000/sleep-queue"
+  historyLimit: 3
   template:
     spec:
       serviceAccountName: sleep-awssqsworkerjob-serviceaccount

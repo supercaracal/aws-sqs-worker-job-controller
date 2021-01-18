@@ -27,7 +27,6 @@ import (
 )
 
 const (
-	defaultHistoryLimit      = 3
 	defaultReconcileDuration = 10 * time.Second
 )
 
@@ -41,7 +40,6 @@ type CustomController struct {
 	customInformerSynced cache.InformerSynced
 	workQueue            workqueue.RateLimitingInterface
 	recorder             record.EventRecorder
-	historyLimit         int
 	reconcileDuration    time.Duration
 }
 
@@ -83,7 +81,6 @@ func NewCustomController(
 		customInformerSynced: customInformer.Informer().HasSynced,
 		workQueue:            wq,
 		recorder:             recorder,
-		historyLimit:         defaultHistoryLimit,
 		reconcileDuration:    defaultReconcileDuration,
 	}
 
@@ -117,7 +114,6 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 		c.customResourceLister,
 		c.workQueue,
 		c.recorder,
-		c.historyLimit,
 	)
 	cw, err := workers.NewConsumer(
 		os.Getenv("AWS_REGION"),
