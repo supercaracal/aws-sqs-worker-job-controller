@@ -25,25 +25,21 @@ all: build test lint
 ${TEMP_DIR}:
 	@mkdir -p $@
 
-${TEMP_DIR}/codegen: API_VERSION     := v1
-${TEMP_DIR}/codegen: CURRENT_DIR     := $(shell pwd)
-${TEMP_DIR}/codegen: CODE_GEN_DIR    := github.com/${API_PKG}/${APP_NAME}/pkg
-${TEMP_DIR}/codegen: CODE_GEN_INPUT  := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
-${TEMP_DIR}/codegen: CODE_GEN_OUTPUT := ${CODE_GEN_DIR}/generated
-${TEMP_DIR}/codegen: CODE_GEN_ARGS   := --output-base ${CURRENT_DIR} --go-header-file ${CURRENT_DIR}/${TEMP_DIR}/empty.txt
-${TEMP_DIR}/codegen: CODE_GEN_DEEPC  := zz_generated.deepcopy
-${TEMP_DIR}/codegen: GOBIN           ?= $(shell go env GOPATH)/bin
+${TEMP_DIR}/codegen: GOBIN                  ?= $(shell go env GOPATH)/bin
+${TEMP_DIR}/codegen: API_VERSION            := v1
+${TEMP_DIR}/codegen: CODE_GEN_DIR           := pkg
+${TEMP_DIR}/codegen: CODE_GEN_INPUT         := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
+${TEMP_DIR}/codegen: CODE_GEN_OUTPUT        := ${CODE_GEN_DIR}/generated
+${TEMP_DIR}/codegen: CURRENT_DIR            := $(shell pwd)
+${TEMP_DIR}/codegen: CODE_GEN_ARGS          := --output-base=${CURRENT_DIR} --go-header-file=${CURRENT_DIR}/${TEMP_DIR}/empty.txt
+${TEMP_DIR}/codegen: CODE_GEN_DEEPC         := zz_generated.deepcopy
+${TEMP_DIR}/codegen: CODE_GEN_CLI_SET_NAME  := versioned
 ${TEMP_DIR}/codegen: ${TEMP_DIR} $(shell find pkg/apis/${API_PKG}/ -type f -name '*.go')
 	@touch -a ${TEMP_DIR}/empty.txt
-	${GOBIN}/deepcopy-gen --input-dirs "${CODE_GEN_INPUT}" -O "${CODE_GEN_DEEPC}" --bounding-dirs "${CODE_GEN_INPUT}" ${CODE_GEN_ARGS}
-	${GOBIN}/client-gen --clientset-name "versioned" --input-base "" --input "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/clientset" ${CODE_GEN_ARGS}
-	${GOBIN}/lister-gen --input-dirs "${CODE_GEN_INPUT}" --output-package "${CODE_GEN_OUTPUT}/listers" ${CODE_GEN_ARGS}
-	${GOBIN}/informer-gen --input-dirs "${CODE_GEN_INPUT}" --versioned-clientset-package "${CODE_GEN_OUTPUT}/clientset/versioned" --listers-package "${CODE_GEN_OUTPUT}/listers" --output-package "${CODE_GEN_OUTPUT}/informers" ${CODE_GEN_ARGS}
-	@rm -f pkg/apis/${API_PKG}/${API_VERSION}/${CODE_GEN_DEEPC}.go
-	@mv ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}/${CODE_GEN_DEEPC}.go pkg/apis/${API_PKG}/${API_VERSION}/
-	@rm -rf pkg/generated
-	@mv ${CODE_GEN_OUTPUT} pkg/
-	@rm -rf github.com
+	${GOBIN}/deepcopy-gen ${CODE_GEN_ARGS} --input-dirs=${CODE_GEN_INPUT} --bounding-dirs=${CODE_GEN_INPUT} -O ${CODE_GEN_DEEPC}
+	${GOBIN}/client-gen   ${CODE_GEN_ARGS} --input=${CODE_GEN_INPUT}      --output-package=${CODE_GEN_OUTPUT}/clientset --input-base="" --clientset-name=${CODE_GEN_CLI_SET_NAME}
+	${GOBIN}/lister-gen   ${CODE_GEN_ARGS} --input-dirs=${CODE_GEN_INPUT} --output-package=${CODE_GEN_OUTPUT}/listers
+	${GOBIN}/informer-gen ${CODE_GEN_ARGS} --input-dirs=${CODE_GEN_INPUT} --output-package=${CODE_GEN_OUTPUT}/informers --versioned-clientset-package=${CODE_GEN_OUTPUT}/clientset/${CODE_GEN_CLI_SET_NAME} --listers-package=${CODE_GEN_OUTPUT}/listers
 	@touch $@
 
 codegen: ${TEMP_DIR}/codegen

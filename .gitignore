@@ -1,7 +1,7 @@
 /_tmp
 /github.com
 /vendor
-/pkg/apis/supercaracal/*/zz_generated.deepcopy.go
+/pkg/apis/**/zz_generated.deepcopy.go
 /pkg/generated
 /aws-sqs-worker-job-controller
 .env
