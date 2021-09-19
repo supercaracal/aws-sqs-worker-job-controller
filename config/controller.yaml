@@ -12,7 +12,7 @@ metadata:
 rules:
   - apiGroups:
       - batch
-      - awssqsworkerjob.k8s.io
+      - supercaracal.example.com
       - ""
     resources:
       - events
@@ -42,7 +42,7 @@ metadata:
 rules:
   - apiGroups:
       - batch
-      - awssqsworkerjob.k8s.io
+      - supercaracal.example.com
     resources:
       - jobs
       - awssqsworkerjobs
