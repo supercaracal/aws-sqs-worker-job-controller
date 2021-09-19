@@ -1,4 +1,4 @@
-package controllers
+package controller
 
 import (
 	"fmt"
@@ -18,12 +18,12 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	handlers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/handlers"
-	workers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/workers"
+	handlers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/handler"
+	workers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/worker"
 	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
 	customscheme "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned/scheme"
-	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions/awssqsworkerjobcontroller/v1"
-	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
+	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions/supercaracal/v1"
+	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
 )
 
 const (

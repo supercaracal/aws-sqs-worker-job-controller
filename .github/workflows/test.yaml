@@ -1,4 +1,5 @@
 ---
+# @see https://help.github.com/ja/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions
 name: Test
 on:
   push:
@@ -13,9 +14,28 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
-        go-ver: ["1.15"]
+        os: ["ubuntu-latest"]
+        go-ver: ["1.17"]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    services:
+      localstack:
+        image: localstack/localstack
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "awslocal sqs list-queues"
+          --health-interval 20s
+          --health-timeout 10s
+          --health-retries 5
+        env:
+          TZ: "Asia/Tokyo"
+          DEBUG: "1"
+          FORCE_NONINTERACTIVE: "1"
+          SERVICES: "sqs"
+          DEFAULT_REGION: "ap-northeast-1"
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -25,29 +45,26 @@ jobs:
         with:
           go-version: ${{ matrix.go-ver }}
 
-      - name: Add $GOPATH/bin to $PATH
-        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
       - name: Get dependencies
         run: |
-          go get -u\
-            golang.org/x/lint/golint\
-            k8s.io/code-generator/...
-
-      - name: Print Go env
-        run: go env
+          go install golang.org/x/lint/golint@latest
+          go install k8s.io/code-generator/...@latest
 
       - name: Generate several codes
         run: make codegen
+
+      - name: Build
+        run: make build
 
       - name: Lint
         run: make lint
 
       - name: Test
         run: make test
-
-      - name: Build
-        run: make build
+        env:
+          AWS_ACCESS_KEY_ID: AAAAAAAAAAAAAAAAAAAA
+          AWS_SECRET_ACCESS_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+          AWS_ENDPOINT_URL: http://127.0.0.1:4566
 
       - name: Lint docker image
         run: make lint-image

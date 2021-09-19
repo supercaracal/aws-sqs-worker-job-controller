@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
-	controllers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/controllers"
+	controllers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/controller"
 	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
 	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions"
 )
@@ -73,7 +73,7 @@ func main() {
 		kubeClient,
 		customClient,
 		kubeInformerFactory.Batch().V1().Jobs(),
-		customInformerFactory.Awssqsworkerjobcontroller().V1().AWSSQSWorkerJobs(),
+		customInformerFactory.Supercaracal().V1().AWSSQSWorkerJobs(),
 	)
 
 	kubeInformerFactory.Start(stopCh)

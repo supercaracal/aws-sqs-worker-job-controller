@@ -1,7 +1,6 @@
-_tmp
-github.com
-vendor
-pkg/apis/awssqsworkerjobcontroller/*/zz_generated.deepcopy.go
-pkg/generated
-aws-sqs-worker-job-controller
+/_tmp
+/vendor
+/pkg/apis/**/zz_generated.deepcopy.go
+/pkg/generated
+/aws-sqs-worker-job-controller
 .env

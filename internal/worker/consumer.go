@@ -1,4 +1,4 @@
-package workers
+package worker
 
 import (
 	"context"
@@ -17,9 +17,9 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	"github.com/supercaracal/aws-sqs-worker-job-controller/internal/queues"
-	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller/v1"
-	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
+	queues "github.com/supercaracal/aws-sqs-worker-job-controller/internal/queue"
+	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal/v1"
+	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
 )
 
 // Consumer is

@@ -1,4 +1,4 @@
-package workers
+package worker
 
 import (
 	"context"
@@ -18,10 +18,10 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	utils "github.com/supercaracal/aws-sqs-worker-job-controller/internal/utils"
-	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller/v1"
+	utils "github.com/supercaracal/aws-sqs-worker-job-controller/internal/util"
+	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal/v1"
 	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
-	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/awssqsworkerjobcontroller/v1"
+	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
 )
 
 const (
@@ -188,7 +188,7 @@ func (r *Reconciler) updateCustomResourceStatus(
 		cpy.Status.Succeeded = false
 	}
 
-	_, err := r.customClientSet.AwssqsworkerjobcontrollerV1().
+	_, err := r.customClientSet.SupercaracalV1().
 		AWSSQSWorkerJobs(parent.Namespace).
 		Update(context.TODO(), cpy, metav1.UpdateOptions{})
 
