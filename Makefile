@@ -27,19 +27,21 @@ ${TEMP_DIR}:
 
 ${TEMP_DIR}/codegen: CURRENT_DIR            := $(shell pwd)
 ${TEMP_DIR}/codegen: GOBIN                  ?= $(shell go env GOPATH)/bin
-${TEMP_DIR}/codegen: GOENV                  := GOROOT=${CURRENT_DIR}/${TEMP_DIR}
+${TEMP_DIR}/codegen: GOENV                  += GOROOT=${CURRENT_DIR}/${TEMP_DIR}
 ${TEMP_DIR}/codegen: LOG_LEVEL              ?= 1
 ${TEMP_DIR}/codegen: API_VERSION            := v1
-${TEMP_DIR}/codegen: CODE_GEN_DIR           := pkg
-${TEMP_DIR}/codegen: CODE_GEN_INPUT         := ${CODE_GEN_DIR}/apis/${API_PKG}/${API_VERSION}
-${TEMP_DIR}/codegen: CODE_GEN_OUTPUT        := ${CODE_GEN_DIR}/generated
-${TEMP_DIR}/codegen: CODE_GEN_ARGS          := --output-base=${CURRENT_DIR} --go-header-file=${CURRENT_DIR}/${TEMP_DIR}/empty.txt -v ${LOG_LEVEL}
+${TEMP_DIR}/codegen: CODE_GEN_DIR           := github.com/${API_PKG}/${APP_NAME}
+${TEMP_DIR}/codegen: CODE_GEN_INPUT         := ${CODE_GEN_DIR}/pkg/apis/${API_PKG}/${API_VERSION}
+${TEMP_DIR}/codegen: CODE_GEN_OUTPUT        := ${CODE_GEN_DIR}/pkg/generated
+${TEMP_DIR}/codegen: CODE_GEN_ARGS          += --output-base=${CURRENT_DIR}/${TEMP_DIR}/src
+${TEMP_DIR}/codegen: CODE_GEN_ARGS          += --go-header-file=${CURRENT_DIR}/${TEMP_DIR}/empty.txt
+${TEMP_DIR}/codegen: CODE_GEN_ARGS          += -v ${LOG_LEVEL}
 ${TEMP_DIR}/codegen: CODE_GEN_DEEPC         := zz_generated.deepcopy
 ${TEMP_DIR}/codegen: CODE_GEN_CLI_SET_NAME  := versioned
 ${TEMP_DIR}/codegen: ${TEMP_DIR} $(shell find pkg/apis/${API_PKG}/ -type f -name '*.go')
 	@touch -a ${TEMP_DIR}/empty.txt
-	@mkdir -p ${TEMP_DIR}/src
-	@ln -sf ${CURRENT_DIR}/pkg ${TEMP_DIR}/src/
+	@mkdir -p ${TEMP_DIR}/src/${CODE_GEN_DIR}
+	@ln -sf ${CURRENT_DIR}/pkg ${TEMP_DIR}/src/${CODE_GEN_DIR}/
 	@# https://github.com/kubernetes/gengo/blob/master/args/args.go
 	@# https://github.com/kubernetes/code-generator/tree/master/cmd
 	${GOENV} ${GOBIN}/deepcopy-gen ${CODE_GEN_ARGS} --input-dirs=${CODE_GEN_INPUT} --bounding-dirs=${CODE_GEN_INPUT} --output-file-base=${CODE_GEN_DEEPC}

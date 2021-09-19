@@ -25,7 +25,7 @@ $ docker pull ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
 $ kind create cluster
 $ kubectl cluster-info --context kind-kind
 $ make apply-manifests
-$ kubectl port-forward service/localstack 4566:4566
+$ kubectl --context=kind-kind port-forward service/localstack 4566:4566
 ```
 
 # LocalStack

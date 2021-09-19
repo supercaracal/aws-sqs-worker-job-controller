@@ -188,7 +188,7 @@ func (r *Reconciler) updateCustomResourceStatus(
 		cpy.Status.Succeeded = false
 	}
 
-	_, err := r.customClientSet.AwssqsworkerjobcontrollerV1().
+	_, err := r.customClientSet.SupercaracalV1().
 		AWSSQSWorkerJobs(parent.Namespace).
 		Update(context.TODO(), cpy, metav1.UpdateOptions{})
 
