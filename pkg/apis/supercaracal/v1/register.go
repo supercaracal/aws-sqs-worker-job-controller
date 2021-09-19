@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	ctrl "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/awssqsworkerjobcontroller"
+	ctrl "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal"
 )
 
 // SchemeGroupVersion is group version used to register these objects

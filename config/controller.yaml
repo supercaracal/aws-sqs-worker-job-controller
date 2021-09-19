@@ -2,19 +2,17 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: aws-sqs-worker-job-controller-serviceaccount
-  namespace: default
+  name: controller
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: aws-sqs-worker-job-controller-role
-  namespace: default
+  name: controller
 rules:
   - apiGroups:
       - batch
-      - awssqsworkerjobcontroller.k8s.io
+      - awssqsworkerjob.k8s.io
       - ""
     resources:
       - events
@@ -27,26 +25,24 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: aws-sqs-worker-job-controller-rolebinding
-  namespace: default
+  name: controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: aws-sqs-worker-job-controller-role
+  name: controller
 subjects:
   - kind: ServiceAccount
-    name: aws-sqs-worker-job-controller-serviceaccount
-    namespace: default
+    name: controller
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: aws-sqs-worker-job-controller-clusterrole
+  name: controller
 rules:
   - apiGroups:
       - batch
-      - awssqsworkerjobcontroller.k8s.io
+      - awssqsworkerjob.k8s.io
     resources:
       - jobs
       - awssqsworkerjobs
@@ -59,22 +55,21 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: aws-sqs-worker-job-controller-clusterrolebinding
+  name: controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: aws-sqs-worker-job-controller-clusterrole
+  name: controller
 subjects:
   - kind: ServiceAccount
-    name: aws-sqs-worker-job-controller-serviceaccount
+    name: controller
     namespace: default
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aws-sqs-worker-job-controller-deployment
-  namespace: default
+  name: controller
 spec:
   strategy:
     type: Recreate
@@ -87,15 +82,15 @@ spec:
       labels:
         app: aws-sqs-worker-job-controller
     spec:
-      serviceAccountName: aws-sqs-worker-job-controller-serviceaccount
+      serviceAccountName: controller
       containers:
-        - name: aws-sqs-worker-job-controller-container
+        - name: main
           image: ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
           env:
             - name: AWS_REGION
-              value: "us-west-2"
+              value: "ap-northeast-1"
             - name: AWS_ENDPOINT_URL
-              value: "http://localstack-service.default.svc.cluster.local:4566"
+              value: "http://localstack.default.svc.cluster.local:4566"
             - name: AWS_ACCESS_KEY_ID
               value: "AAAAAAAAAAAAAAAAAAAA"
             - name: AWS_SECRET_ACCESS_KEY

@@ -1,4 +1,4 @@
-package queues
+package queue
 
 // MessageQueue is
 type MessageQueue interface {

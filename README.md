@@ -1,8 +1,8 @@
-AWS SQS Worker Job Controller
-=================================================
-
 ![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Test/badge.svg)
 ![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Docker/badge.svg)
+
+AWS SQS Worker Job Controller
+=================================================
 
 This is a custom controller for Kubernetes.  
 The controller aims at handling worker jobs for queueing.  
@@ -25,23 +25,30 @@ $ docker pull ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
 $ kind create cluster
 $ kubectl cluster-info --context kind-kind
 $ make apply-manifests
-$ kubectl port-forward service/localstack-service 4566:4566
+$ kubectl port-forward service/localstack 4566:4566
 ```
 
 # LocalStack
 
 ```
-$ make create-sleep-queue
-$ make enqueue-sleep-task
-$ make get-sleep-queue-attrs
+$ make create-test-queue
+$ make enqueue-test-task
+$ make get-test-queue-attrs
 ```
 
 # Development
 
 ```
-$ go get -u golang.org/x/lint/golint k8s.io/code-generator/...
+$ go install golang.org/x/lint/golint@latest
+$ go install k8s.io/code-generator/...@latest
 $ make build
 $ make run
+```
+
+# Test
+
+```
+$ make test
 ```
 
 # See also

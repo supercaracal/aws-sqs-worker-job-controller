@@ -2,46 +2,41 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: sleep-awssqsworkerjob-serviceaccount
-  namespace: default
+  name: sleep-awssqsworkerjob
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: sleep-awssqsworkerjob-role
-  namespace: default
+  name: sleep-awssqsworkerjob
 rules: []
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: sleep-awssqsworkerjob-rolebinding
-  namespace: default
+  name: sleep-awssqsworkerjob
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: sleep-awssqsworkerjob-role
+  name: sleep-awssqsworkerjob
 subjects:
   - kind: ServiceAccount
-    name: sleep-awssqsworkerjob-serviceaccount
-    namespace: default
+    name: sleep-awssqsworkerjob
 
 ---
-apiVersion: awssqsworkerjobcontroller.k8s.io/v1
+apiVersion: supercaracal.example.com/v1
 kind: AWSSQSWorkerJob
 metadata:
   name: sleep-awssqsworkerjob
-  namespace: default
 spec:
-  queueURL: "http://localhost:4566/000000000000/sleep-queue"
+  queueURL: "http://localstack.default.svc.cluster.local:4566/000000000000/sleep-queue.fifo"
   historyLimit: 3
   template:
     spec:
-      serviceAccountName: sleep-awssqsworkerjob-serviceaccount
+      serviceAccountName: sleep-awssqsworkerjob
       containers:
-        - name: sleeper
+        - name: main
           image: alpine:latest
           command:
             - "/bin/sleep"
