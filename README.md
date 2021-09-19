@@ -1,5 +1,5 @@
-![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Test/badge.svg)
-![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Docker/badge.svg)
+![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Test/badge.svg?branch=master)
+![](https://github.com/supercaracal/aws-sqs-worker-job-controller/workflows/Release/badge.svg)
 
 AWS SQS Worker Job Controller
 =================================================
