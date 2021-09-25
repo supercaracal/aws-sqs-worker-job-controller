@@ -1,12 +1,5 @@
-.git
-.github
-_tmp
-config
-github.com
-aws-sqs-worker-job-controller
-go_mod_replace.sh
-.dockerignore
+/.git
+/.github
+/_tmp
+/aws-sqs-worker-job-controller
 .env
-.gitignore
-Dockerfile
-README.md

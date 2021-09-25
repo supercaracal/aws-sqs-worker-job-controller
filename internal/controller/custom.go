@@ -8,11 +8,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	batchinformers "k8s.io/client-go/informers/batch/v1"
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
+	kubescheme "k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	batchlisters "k8s.io/client-go/listers/batch/v1"
+	batchlisterv1 "k8s.io/client-go/listers/batch/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -20,79 +21,73 @@ import (
 
 	handlers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/handler"
 	workers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/worker"
-	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
+	customclient "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
 	customscheme "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned/scheme"
-	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions/supercaracal/v1"
-	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
+	custominformers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions"
+	customlisterv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
 )
 
 const (
-	defaultReconcileDuration = 10 * time.Second
+	informerReSyncDuration = 10 * time.Second
+	consumingDuration      = 10 * time.Second
+	cleanupDuration        = 10 * time.Minute
+	resourceName           = "AWSQSWorkerJobs"
 )
 
 // CustomController is
 type CustomController struct {
-	kubeClientSet        kubernetes.Interface
-	customClientSet      clientset.Interface
-	jobLister            batchlisters.JobLister
-	jobSynced            cache.InformerSynced
-	customResourceLister listers.AWSSQSWorkerJobLister
-	customInformerSynced cache.InformerSynced
-	workQueue            workqueue.RateLimitingInterface
-	recorder             record.EventRecorder
-	reconcileDuration    time.Duration
+	builtin   *builtinTool
+	custom    *customTool
+	workQueue workqueue.RateLimitingInterface
+}
+
+type builtinTool struct {
+	client  kubernetes.Interface
+	factory kubeinformers.SharedInformerFactory
+	job     *jobInfo
+}
+
+type customTool struct {
+	client   customclient.Interface
+	factory  custominformers.SharedInformerFactory
+	resource *customResourceInfo
+}
+
+type jobInfo struct {
+	informer cache.SharedIndexInformer
+	lister   batchlisterv1.JobLister
+}
+
+type customResourceInfo struct {
+	informer cache.SharedIndexInformer
+	lister   customlisterv1.AWSSQSWorkerJobLister
 }
 
 // NewCustomController is
-func NewCustomController(
-	kubeClientSet kubernetes.Interface,
-	customClientSet clientset.Interface,
-	jobInformer batchinformers.JobInformer,
-	customInformer informers.AWSSQSWorkerJobInformer,
-) *CustomController {
-
-	utilruntime.Must(customscheme.AddToScheme(scheme.Scheme))
-	klog.V(4).Info("Creating event broadcaster")
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartStructuredLogging(0)
-	eventBroadcaster.StartRecordingToSink(
-		&typedcorev1.EventSinkImpl{
-			Interface: kubeClientSet.CoreV1().Events(""),
-		},
-	)
-	recorder := eventBroadcaster.NewRecorder(
-		scheme.Scheme,
-		corev1.EventSource{
-			Component: "aws-sqs-worker-job-controller",
-		},
-	)
-
-	wq := workqueue.NewNamedRateLimitingQueue(
-		workqueue.DefaultControllerRateLimiter(),
-		"AWSSQSWorkerJobs",
-	)
-
-	controller := &CustomController{
-		kubeClientSet:        kubeClientSet,
-		customClientSet:      customClientSet,
-		jobLister:            jobInformer.Lister(),
-		jobSynced:            jobInformer.Informer().HasSynced,
-		customResourceLister: customInformer.Lister(),
-		customInformerSynced: customInformer.Informer().HasSynced,
-		workQueue:            wq,
-		recorder:             recorder,
-		reconcileDuration:    defaultReconcileDuration,
+func NewCustomController(cfg *rest.Config) (*CustomController, error) {
+	if err := customscheme.AddToScheme(kubescheme.Scheme); err != nil {
+		return nil, err
 	}
 
-	klog.Info("Setting up event handlers")
-	h := handlers.NewInformerHandler()
-	customInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	builtin, err := buildBuiltinTools(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	custom, err := buildCustomTools(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	wq := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), resourceName)
+	h := handlers.NewInformerHandler(wq)
+	custom.resource.informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    h.OnAdd,
 		UpdateFunc: h.OnUpdate,
 		DeleteFunc: h.OnDelete,
 	})
 
-	return controller
+	return &CustomController{builtin: builtin, custom: custom, workQueue: wq}, nil
 }
 
 // Run is
@@ -100,40 +95,67 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	defer utilruntime.HandleCrash()
 	defer c.workQueue.ShutDown()
 
-	klog.Info("Starting AWSSQSWorkerJob controller")
-	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.jobSynced, c.customInformerSynced); !ok {
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartStructuredLogging(0)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: c.builtin.client.CoreV1().Events("")})
+	recorder := eventBroadcaster.NewRecorder(kubescheme.Scheme, corev1.EventSource{Component: resourceName})
+
+	c.builtin.factory.Start(stopCh)
+	c.custom.factory.Start(stopCh)
+
+	if ok := cache.WaitForCacheSync(stopCh, c.builtin.job.informer.HasSynced, c.custom.resource.informer.HasSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	klog.Info("Starting workers")
-	rw := workers.NewReconciler(
-		c.kubeClientSet,
-		c.customClientSet,
-		c.jobLister,
-		c.customResourceLister,
+	worker := workers.NewReconciler(
+		&workers.ResourceClient{
+			Builtin: c.builtin.client,
+			Custom:  c.custom.client,
+		},
+		&workers.ResourceLister{
+			Job:            c.builtin.job.lister,
+			CustomResource: c.custom.resource.lister,
+		},
 		c.workQueue,
-		c.recorder,
+		recorder,
 	)
-	cw, err := workers.NewConsumer(
-		os.Getenv("AWS_REGION"),
-		os.Getenv("AWS_ENDPOINT_URL"),
-		os.Getenv("SELF_NAMESPACE"),
-		c.kubeClientSet,
-		c.customResourceLister,
-		c.workQueue,
-		c.recorder,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to initialize consumer worker: %w", err)
+
+	if err := worker.WithMessageQueueService(os.Getenv("AWS_REGION"), os.Getenv("AWS_ENDPOINT_URL")); err != nil {
+		return err
 	}
 
-	go wait.Until(rw.Run, c.reconcileDuration, stopCh)
-	go wait.Until(cw.Run, 10*time.Second, stopCh)
+	go wait.Until(worker.Consume, consumingDuration, stopCh)
+	go wait.Until(worker.Clean, cleanupDuration, stopCh)
 
-	klog.Info("Started workers")
+	klog.V(4).Info("Controller is ready")
 	<-stopCh
-	klog.Info("Shutting down workers")
+	klog.V(4).Info("Shutting down controller")
 
 	return nil
+}
+
+func buildBuiltinTools(cfg *rest.Config) (*builtinTool, error) {
+	cli, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	info := kubeinformers.NewSharedInformerFactory(cli, informerReSyncDuration)
+	job := info.Batch().V1().Jobs()
+	j := jobInfo{informer: job.Informer(), lister: job.Lister()}
+
+	return &builtinTool{client: cli, factory: info, job: &j}, nil
+}
+
+func buildCustomTools(cfg *rest.Config) (*customTool, error) {
+	cli, err := customclient.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	info := custominformers.NewSharedInformerFactory(cli, informerReSyncDuration)
+	cr := info.Supercaracal().V1().AWSSQSWorkerJobs()
+	r := customResourceInfo{informer: cr.Informer(), lister: cr.Lister()}
+
+	return &customTool{client: cli, factory: info, resource: &r}, nil
 }

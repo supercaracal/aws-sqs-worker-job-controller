@@ -76,16 +76,20 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: aws-sqs-worker-job-controller
+      app.kubernetes.io/name: aws-sqs-worker-job-controller
+      app.kubernetes.io/part-of: supercaracal.example.com
+      app.kubernetes.io/component: controller
   template:
     metadata:
       labels:
-        app: aws-sqs-worker-job-controller
+        app.kubernetes.io/name: aws-sqs-worker-job-controller
+        app.kubernetes.io/part-of: supercaracal.example.com
+        app.kubernetes.io/component: controller
     spec:
       serviceAccountName: controller
       containers:
         - name: main
-          image: ghcr.io/supercaracal/aws-sqs-worker-job-controller:latest
+          image: 127.0.0.1:32123/aws-sqs-worker-job-controller:latest
           env:
             - name: AWS_REGION
               value: "ap-northeast-1"
@@ -95,13 +99,12 @@ spec:
               value: "AAAAAAAAAAAAAAAAAAAA"
             - name: AWS_SECRET_ACCESS_KEY
               value: "0000000000000000000000000000000000000000"
-            - name: SELF_NAMESPACE
-              value: "default"
             - name: TZ
               value: "Asia/Tokyo"
           resources:
             requests:
-              memory: 128Mi
+              cpu: 50m
+              memory: 64Mi
             limits:
               cpu: 100m
               memory: 128Mi

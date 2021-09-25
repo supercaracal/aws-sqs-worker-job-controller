@@ -5,17 +5,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
 	controllers "github.com/supercaracal/aws-sqs-worker-job-controller/internal/controller"
-	clientset "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/clientset/versioned"
-	informers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/informers/externalversions"
 )
 
 var (
@@ -23,64 +18,22 @@ var (
 	kubeconfig string
 )
 
-func setupSignalHandler() <-chan struct{} {
-	stop := make(chan struct{})
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		close(stop)
-		<-c
-		os.Exit(1)
-	}()
-
-	return stop
-}
-
-func buildConfig(masterURL, kubeconfig string) (*rest.Config, error) {
-	if kubeconfig == "" {
-		return rest.InClusterConfig()
-	}
-
-	return clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
-}
-
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 
-	stopCh := setupSignalHandler()
-
 	cfg, err := buildConfig(masterURL, kubeconfig)
 	if err != nil {
-		klog.Fatalf("Error building kubeconfig: %s", err.Error())
+		klog.Fatal("Error building kubernetes config: ", err)
 	}
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
+	ctrl, err := controllers.NewCustomController(cfg)
 	if err != nil {
-		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
+		klog.Fatal("Error building custom controller: ", err)
 	}
 
-	customClient, err := clientset.NewForConfig(cfg)
-	if err != nil {
-		klog.Fatalf("Error building custom clientset: %s", err.Error())
-	}
-
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	customInformerFactory := informers.NewSharedInformerFactory(customClient, time.Second*30)
-
-	customController := controllers.NewCustomController(
-		kubeClient,
-		customClient,
-		kubeInformerFactory.Batch().V1().Jobs(),
-		customInformerFactory.Supercaracal().V1().AWSSQSWorkerJobs(),
-	)
-
-	kubeInformerFactory.Start(stopCh)
-	customInformerFactory.Start(stopCh)
-
-	if err = customController.Run(stopCh); err != nil {
-		klog.Fatalf("Error running controller: %s", err.Error())
+	if err := ctrl.Run(setUpSignalHandler()); err != nil {
+		klog.Fatal("Error running controller: ", err)
 	}
 }
 
@@ -98,4 +51,26 @@ func init() {
 		"",
 		"Path to a kubeconfig. Only required if out-of-cluster.",
 	)
+}
+
+func buildConfig(masterURL, kubeconfig string) (*rest.Config, error) {
+	if kubeconfig == "" {
+		return rest.InClusterConfig()
+	}
+
+	return clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+}
+
+func setUpSignalHandler() <-chan struct{} {
+	stop := make(chan struct{})
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		close(stop)
+		<-c
+		os.Exit(1)
+	}()
+
+	return stop
 }
