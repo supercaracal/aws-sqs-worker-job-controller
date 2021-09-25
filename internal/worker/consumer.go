@@ -82,7 +82,7 @@ func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job,
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%d", obj.Name, time.Now().Unix()),
+			Name:      fmt.Sprintf("%s-%d", obj.Name, time.Now().UnixMicro()),
 			Namespace: obj.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(obj, customapiv1.SchemeGroupVersion.WithKind(customResourceName)),
