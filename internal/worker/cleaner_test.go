@@ -4,5 +4,5 @@ import (
 	"testing"
 )
 
-func TestTODO(t *testing.T) {
+func TestTODOCleaner(t *testing.T) {
 }
