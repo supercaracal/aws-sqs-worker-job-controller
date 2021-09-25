@@ -12,9 +12,9 @@ spec:
         - name: main
           image: gcr.io/distroless/static-debian11:debug-amd64
           command:
-            - "/bin/sleep"
+            - "echo"
           args:
-            - "10" # default
+            - "Hello world" # default
           resources:
             requests:
               cpu: 10m

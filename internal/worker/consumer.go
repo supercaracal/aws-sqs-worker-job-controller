@@ -39,25 +39,33 @@ func (r *Reconciler) Consume() {
 	}
 
 	for _, obj := range objs {
+		if err := r.dequeueAndCreateJob(obj); err != nil {
+			utilruntime.HandleError(err)
+		}
+	}
+}
+
+func (r *Reconciler) dequeueAndCreateJob(obj *customapiv1.AWSSQSWorkerJob) error {
+	for {
 		msg, err := r.messageQueue.Dequeue(obj.Spec.QueueURL)
 		if err != nil {
-			utilruntime.HandleError(err)
-			continue
+			return err
 		}
 
 		if msg == "" {
-			continue
+			break
 		}
 
 		job, err := r.createChildJob(obj, msg)
 		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err))
-			continue
+			return fmt.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err)
 		}
 
 		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
 		r.recorder.Eventf(obj, corev1.EventTypeNormal, "Successful Create", "Created job %v", job.Name)
 	}
+
+	return nil
 }
 
 func (r *Reconciler) createChildJob(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {

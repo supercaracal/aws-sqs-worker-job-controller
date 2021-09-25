@@ -130,19 +130,16 @@ replace-k8s-go-module:
 wait-registry-running:
 	${QUIET} ./scripts/wait_pod_status.sh registry Running
 
-wait-controller-running:
-	${QUIET} ./scripts/wait_pod_status.sh controller Running
-
-wait-example-completed:
-	${QUIET} ./scripts/wait_pod_status.sh example Succeeded
-
 wait-localstack-running:
 	${QUIET} ./scripts/wait_pod_status.sh localstack Running
+
+wait-controller-running:
+	${QUIET} ./scripts/wait_pod_status.sh controller Running
 
 create-example-queue:
 	${QUIET} ${ENV} aws ${AWS_CLI_OPTS} sqs create-queue --queue-name=${SQS_QUEUE_NAME}
 
-enqueue-example-task: BODY ?= 3
+enqueue-example-task: BODY ?= Hello
 enqueue-example-task:
 	${QUIET} ${ENV} aws ${AWS_CLI_OPTS} sqs send-message --queue-url=${SQS_QUEUE_URL} --message-body=${BODY}
 

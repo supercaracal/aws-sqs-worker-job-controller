@@ -100,11 +100,9 @@ func (r *Reconciler) updateParent(parent *customapiv1.AWSSQSWorkerJob, child *ba
 func extractChildren(parent *customapiv1.AWSSQSWorkerJob, jobs []*batchv1.Job, size int) []*batchv1.Job {
 	children := make([]*batchv1.Job, 0, size)
 	for _, job := range jobs {
-		if getJobFinishedStatus(job) == "" || !metav1.IsControlledBy(job, parent) {
-			continue
+		if getJobFinishedStatus(job) != "" && metav1.IsControlledBy(job, parent) {
+			children = append(children, job)
 		}
-
-		children = append(children, job)
 	}
 
 	return children

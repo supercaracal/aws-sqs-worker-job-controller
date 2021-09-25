@@ -30,7 +30,7 @@ import (
 const (
 	informerReSyncDuration = 10 * time.Second
 	consumingDuration      = 10 * time.Second
-	cleanupDuration        = 10 * time.Minute
+	cleanupDuration        = 10 * time.Second
 	resourceName           = "AWSQSWorkerJobs"
 )
 
@@ -98,7 +98,7 @@ func (c *CustomController) Run(stopCh <-chan struct{}) error {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: c.builtin.client.CoreV1().Events("")})
-	recorder := eventBroadcaster.NewRecorder(kubescheme.Scheme, corev1.EventSource{Component: resourceName})
+	recorder := eventBroadcaster.NewRecorder(kubescheme.Scheme, corev1.EventSource{Component: "controller"})
 
 	c.builtin.factory.Start(stopCh)
 	c.custom.factory.Start(stopCh)
