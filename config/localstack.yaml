@@ -36,11 +36,11 @@ spec:
             - containerPort: 4566
           resources:
             requests:
-              cpu: 500m
-              memory: 512Mi
+              cpu: 200m
+              memory: 256Mi
             limits:
-              cpu: 1000m
-              memory: 1024Mi
+              cpu: 400m
+              memory: 512Mi
           readinessProbe:
             exec:
               command: ["awslocal", "sqs", "list-queues"]
