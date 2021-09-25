@@ -4,7 +4,7 @@ kind: AWSSQSWorkerJob
 metadata:
   name: example-awssqsworkerjob
 spec:
-  queueURL: "http://localstack.default.svc.cluster.local:4566/000000000000/sleep-queue.fifo"
+  queueURL: "http://localstack.default.svc.cluster.local:4566/000000000000/example-queue.fifo"
   historyLimit: 3
   template:
     spec:
@@ -14,7 +14,7 @@ spec:
           command:
             - "/bin/sleep"
           args:
-            - "180" # default
+            - "10" # default
           resources:
             requests:
               cpu: 10m

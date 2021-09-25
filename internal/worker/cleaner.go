@@ -19,6 +19,11 @@ const (
 	defaultHistoryLimit = 10
 )
 
+var (
+	delOpts = metav1.DeleteOptions{PropagationPolicy: func(s metav1.DeletionPropagation) *metav1.DeletionPropagation { return &s }(metav1.DeletePropagationBackground)}
+	updOpts = metav1.UpdateOptions{}
+)
+
 // Clean is
 func (r *Reconciler) Clean() {
 	parents, err := r.lister.CustomResource.List(labels.Everything())
@@ -40,9 +45,6 @@ func (r *Reconciler) Clean() {
 	sort.Sort(JobsOrderedByStartTimeASC(allJobs))
 
 	var historyLimit int
-	background := metav1.DeletePropagationBackground
-	delOpts := metav1.DeleteOptions{PropagationPolicy: &background}
-
 	for _, parent := range parents {
 		historyLimit = defaultHistoryLimit
 		if parent.Spec.HistoryLimit != nil {
@@ -91,7 +93,7 @@ func (r *Reconciler) updateParent(parent *customapiv1.AWSSQSWorkerJob, child *ba
 		cpy.Status.Succeeded = true
 	}
 
-	_, err = r.client.Custom.SupercaracalV1().AWSSQSWorkerJobs(parent.Namespace).Update(context.TODO(), cpy, metav1.UpdateOptions{})
+	_, err = r.client.Custom.SupercaracalV1().AWSSQSWorkerJobs(parent.Namespace).Update(context.TODO(), cpy, updOpts)
 	return
 }
 

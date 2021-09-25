@@ -8,10 +8,10 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	kubeerrors "k8s.io/cri-api/pkg/errors"
 	"k8s.io/klog/v2"
 
 	queues "github.com/supercaracal/aws-sqs-worker-job-controller/internal/queue"
