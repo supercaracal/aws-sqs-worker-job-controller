@@ -115,7 +115,6 @@ jobs:
           make wait-example-completed
           pods=($(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep example))
           test ${#pods[@]} -ge 3
-          pods=($(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep example10))
           for pod in ${pods[@]}; do
-            kubectl --context=kind-kind logs $pod || echo "Deleted: $pod: Hey" | tee /dev/stderr | grep Hey
+            kubectl --context=kind-kind logs $pod || echo "Skipped Hey: $pod" | tee /dev/stderr | grep Hey
           done
