@@ -106,11 +106,12 @@ jobs:
 
       - name: Test
         run: |
-          kubectl --context=kind-kind logs $(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep controller)
           make create-example-queue
           for i in $(seq 1 10); do
             make enqueue-example-task BODY=Hey$i
           done
+          sleep 11
+          kubectl --context=kind-kind logs $(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep controller)
           make wait-example-completed
           pods=($(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep example))
           test ${#pods[@]} -ge 3
