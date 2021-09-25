@@ -1,0 +1,26 @@
+---
+apiVersion: supercaracal.example.com/v1
+kind: AWSSQSWorkerJob
+metadata:
+  name: example-awssqsworkerjob
+spec:
+  queueURL: "http://localstack.default.svc.cluster.local:4566/000000000000/example-queue.fifo"
+  historyLimit: 3
+  template:
+    spec:
+      containers:
+        - name: main
+          image: gcr.io/distroless/static-debian11:debug-amd64
+          command:
+            - "echo"
+          args:
+            - "Hello world" # default
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 20m
+              memory: 64Mi
+          securityContext:
+            readOnlyRootFilesystem: true

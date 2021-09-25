@@ -8,118 +8,85 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
 	queues "github.com/supercaracal/aws-sqs-worker-job-controller/internal/queue"
 	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal/v1"
-	listers "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/generated/listers/supercaracal/v1"
 )
 
-// Consumer is
-type Consumer struct {
-	mq     queues.MessageQueue
-	cli    kubernetes.Interface
-	lister listers.AWSSQSWorkerJobLister
-	wq     workqueue.RateLimitingInterface
-	rec    record.EventRecorder
-	ns     string
+const (
+	customResourceName = "AWSSQSWorkerJob"
+)
+
+// WithMessageQueueService is
+func (r *Reconciler) WithMessageQueueService(region string, endpointURL string) (err error) {
+	r.messageQueue, err = queues.NewSQSClient(region, endpointURL)
+	return
 }
 
-// NewConsumer is
-func NewConsumer(
-	region string,
-	endpointURL string,
-	selfNamespace string,
-	cli kubernetes.Interface,
-	lister listers.AWSSQSWorkerJobLister,
-	wq workqueue.RateLimitingInterface,
-	rec record.EventRecorder,
-) (*Consumer, error) {
-
-	if selfNamespace == "" {
-		return nil, fmt.Errorf("SELF_NAMESPACE env var requireed")
-	}
-
-	mq, err := queues.NewSQSClient(region, endpointURL)
+// Consume is
+func (r *Reconciler) Consume() {
+	objs, err := r.lister.CustomResource.List(labels.Everything())
 	if err != nil {
-		return nil, err
-	}
-
-	return &Consumer{
-		mq:     mq,
-		cli:    cli,
-		lister: lister,
-		wq:     wq,
-		rec:    rec,
-		ns:     selfNamespace,
-	}, nil
-}
-
-// Run is
-func (c *Consumer) Run() {
-	objs, err := c.lister.AWSSQSWorkerJobs(c.ns).List(labels.Everything())
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("Failed to extract custom resource list: %w", err))
+		if !kubeerrors.IsNotFound(err) {
+			utilruntime.HandleError(err)
+		}
 		return
 	}
 
 	for _, obj := range objs {
-		msg, err := c.mq.Dequeue(obj.Spec.QueueURL)
-		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("Failed to dequeue: %w", err))
-			continue
+		if err := r.dequeueAndCreateJob(obj); err != nil {
+			utilruntime.HandleError(err)
 		}
-		if msg == "" {
-			continue
-		}
-
-		job, err := c.createJobResource(obj, msg)
-		if err != nil {
-			klog.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err)
-			continue
-		}
-
-		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
-		c.rec.Eventf(obj, corev1.EventTypeNormal, "Successful Create", "Created job %v", job.Name)
-
-		c.enqueueCustomResource(obj)
 	}
 }
 
-func (c *Consumer) createJobResource(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
+func (r *Reconciler) dequeueAndCreateJob(obj *customapiv1.AWSSQSWorkerJob) error {
+	for {
+		msg, err := r.messageQueue.Dequeue(obj.Spec.QueueURL)
+		if err != nil {
+			return err
+		}
+
+		if msg == "" {
+			break
+		}
+
+		job, err := r.createChildJob(obj, msg)
+		if err != nil {
+			return fmt.Errorf("Unable to make Job from template in %s/%s: %v", obj.Namespace, obj.Name, err)
+		}
+
+		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
+		r.recorder.Eventf(obj, corev1.EventTypeNormal, "Successful Create", "Created job %v", job.Name)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) createChildJob(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
 	tpl, err := getJobTemplate(obj, msg)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.cli.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, metav1.CreateOptions{})
-}
-
-func (c *Consumer) enqueueCustomResource(obj interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(obj)
-	if err != nil {
-		utilruntime.HandleError(err)
-		return
-	}
-
-	c.wq.Add(key)
+	return r.client.Builtin.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, metav1.CreateOptions{})
 }
 
 func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
 	var one int32 = 1
-	kind := customapiv1.SchemeGroupVersion.WithKind("AWSSQSWorkerJob")
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            fmt.Sprintf("%s-%d", obj.Name, time.Now().Unix()),
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(obj, kind)},
+			Name:      fmt.Sprintf("%s-%d", obj.Name, time.Now().UnixMicro()),
+			Namespace: obj.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(obj, customapiv1.SchemeGroupVersion.WithKind(customResourceName)),
+			},
 		},
 		Spec: batchv1.JobSpec{
 			Parallelism:  &one,

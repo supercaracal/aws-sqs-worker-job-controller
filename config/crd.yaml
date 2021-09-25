@@ -6,7 +6,6 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: awssqsworkerjobs.supercaracal.example.com
-  namespace: default
   annotations:
     "api-approved.kubernetes.io": "https://github.com/kubernetes/kubernetes/pull/78458"
 status: {}

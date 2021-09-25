@@ -6,6 +6,9 @@ on:
       - "master"
     tags:
       - "v*"
+defaults:
+  run:
+    shell: bash
 jobs:
   push:
     name: Push
