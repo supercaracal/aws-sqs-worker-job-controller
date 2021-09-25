@@ -22,6 +22,10 @@ const (
 	customResourceName = "AWSSQSWorkerJob"
 )
 
+var (
+	creOpts = metav1.CreateOptions{}
+)
+
 // WithMessageQueueService is
 func (r *Reconciler) WithMessageQueueService(region string, endpointURL string) (err error) {
 	r.messageQueue, err = queues.NewSQSClient(region, endpointURL)
@@ -74,7 +78,7 @@ func (r *Reconciler) createChildJob(obj *customapiv1.AWSSQSWorkerJob, msg string
 		return nil, err
 	}
 
-	return r.client.Builtin.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, metav1.CreateOptions{})
+	return r.client.Builtin.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, creOpts)
 }
 
 func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
