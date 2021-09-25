@@ -106,6 +106,7 @@ jobs:
 
       - name: Test
         run: |
+          kubectl --context=kind-kind logs $(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep controller)
           make create-example-queue
           for i in $(seq 1 10); do
             make enqueue-example-task BODY=Hey$i
