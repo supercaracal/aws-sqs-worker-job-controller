@@ -18,12 +18,10 @@ import (
 	customapiv1 "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal/v1"
 )
 
-const (
-	customResourceName = "AWSSQSWorkerJob"
-)
-
 var (
-	creOpts = metav1.CreateOptions{}
+	one         int32 = 1
+	customGroup       = customapiv1.SchemeGroupVersion.WithKind("AWSSQSWorkerJob")
+	creOpts           = metav1.CreateOptions{}
 )
 
 // WithMessageQueueService is
@@ -82,15 +80,11 @@ func (r *Reconciler) createChildJob(obj *customapiv1.AWSSQSWorkerJob, msg string
 }
 
 func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
-	var one int32 = 1
-
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%d", obj.Name, time.Now().UnixMicro()),
-			Namespace: obj.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(obj, customapiv1.SchemeGroupVersion.WithKind(customResourceName)),
-			},
+			Name:            fmt.Sprintf("%s-%d", obj.Name, time.Now().UnixMicro()),
+			Namespace:       obj.Namespace,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(obj, customGroup)},
 		},
 		Spec: batchv1.JobSpec{
 			Parallelism:  &one,
