@@ -64,7 +64,7 @@ func (r *Reconciler) dequeueAndCreateJob(obj *customapiv1.AWSSQSWorkerJob) error
 		}
 
 		klog.V(4).Infof("Created Job %s for %s/%s", job.Name, obj.Namespace, obj.Name)
-		r.recorder.Eventf(obj, corev1.EventTypeNormal, "Successful Create", "Created job %v", job.Name)
+		r.recorder.Eventf(obj, corev1.EventTypeNormal, "SuccessfulCreate", "Created job %s/%s", job.Namespace, job.Name)
 	}
 
 	return nil

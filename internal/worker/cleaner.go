@@ -70,11 +70,10 @@ func (r *Reconciler) Clean() {
 		for _, child := range children[0 : size-historyLimit] {
 			if err := r.client.Builtin.BatchV1().Jobs(parent.Namespace).Delete(context.TODO(), child.Name, delOpts); err != nil {
 				utilruntime.HandleError(err)
-				r.recorder.Eventf(parent, corev1.EventTypeWarning, "Failure Delete", "Tried to deleted job %v", err)
 				continue
 			}
 
-			r.recorder.Eventf(parent, corev1.EventTypeNormal, "Successful Delete", "Deleted job %v", child.Name)
+			r.recorder.Eventf(parent, corev1.EventTypeNormal, "SuccessfulDelete", "Deleted job %s/%s", child.Namespace, child.Name)
 			klog.V(4).Infof("Deleted resource %s/%s successfully", child.Namespace, child.Name)
 		}
 	}
