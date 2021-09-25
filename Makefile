@@ -9,10 +9,30 @@ REGISTRY  := 127.0.0.1:5000
 TEMP_DIR  := _tmp
 GOBIN     ?= $(shell go env GOPATH)/bin
 
+AWS_ENDPOINT_URL      := http://127.0.0.1:4566
+AWS_REGION            := ap-northeast-1
+AWS_ACCOUNT_ID        := 000000000000
+AWS_ACCESS_KEY_ID     := AAAAAAAAAAAAAAAAAAAA
+AWS_SECRET_ACCESS_KEY := AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AWS_CLI_OPTS          += --endpoint-url=${AWS_ENDPOINT_URL}
+AWS_CLI_OPTS          += --region=${AWS_REGION}
+SQS_QUEUE_NAME        := example-queue.fifo
+SQS_QUEUE_URL         := ${AWS_ENDPOINT_URL}/${AWS_ACCOUNT_ID}/${SQS_QUEUE_NAME}
+TZ                    := Asia/Tokyo
+ENV                   += AWS_REGION=${AWS_REGION}
+ENV                   += AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
+ENV                   += AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+ENV                   += AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+ENV                   += TZ=${TZ}
+
 ifdef VERBOSE
 	QUIET :=
 else
 	QUIET := @
+endif
+
+ifdef AWS_PROFILE
+	AWS_CLI_OPTS += --profile=${AWS_PROFILE}
 endif
 
 all: build test lint
@@ -61,31 +81,11 @@ build: codegen
 
 test:
 	${QUIET} go clean -testcache
-	${QUIET} go test -race ./...
+	${QUIET} ${ENV} go test -race ./...
 
 lint: ${GOBIN}/golint
 	${QUIET} go vet ./...
 	${QUIET} golint -set_exit_status ./...
-
-AWS_ENDPOINT_URL      := http://127.0.0.1:4566
-AWS_REGION            := ap-northeast-1
-AWS_ACCOUNT_ID        := 000000000000
-AWS_ACCESS_KEY_ID     := AAAAAAAAAAAAAAAAAAAA
-AWS_SECRET_ACCESS_KEY := AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AWS_CLI_OPTS          += --endpoint-url=${AWS_ENDPOINT_URL}
-AWS_CLI_OPTS          += --region=${AWS_REGION}
-SQS_QUEUE_NAME        := example-queue.fifo
-SQS_QUEUE_URL         := ${AWS_ENDPOINT_URL}/${AWS_ACCOUNT_ID}/${SQS_QUEUE_NAME}
-TZ                    := Asia/Tokyo
-ENV                   += AWS_REGION=${AWS_REGION}
-ENV                   += AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL}
-ENV                   += AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-ENV                   += AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-ENV                   += TZ=${TZ}
-
-ifdef AWS_PROFILE
-	AWS_CLI_OPTS += --profile=${AWS_PROFILE}
-endif
 
 run: CFG ?= $$HOME/.kube/config
 run:
@@ -135,6 +135,9 @@ wait-localstack-running:
 
 wait-controller-running:
 	${QUIET} ./scripts/wait_pod_status.sh controller Running
+
+wait-example-completed:
+	${QUIET} ./scripts/wait_pod_status.sh example Succeeded
 
 create-example-queue:
 	${QUIET} ${ENV} aws ${AWS_CLI_OPTS} sqs create-queue --queue-name=${SQS_QUEUE_NAME}

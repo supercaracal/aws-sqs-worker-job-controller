@@ -65,10 +65,6 @@ jobs:
 
       - name: Test
         run: make test
-        env:
-          AWS_ACCESS_KEY_ID: AAAAAAAAAAAAAAAAAAAA
-          AWS_SECRET_ACCESS_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-          AWS_ENDPOINT_URL: http://127.0.0.1:4566
 
   image:
     name: Image
@@ -90,14 +86,11 @@ jobs:
       - name: Apply manifests
         run: make apply-manifests
 
-      - name: Waiting for localstack to be ready
-        run: make wait-localstack-running
-
       - name: Waiting for registry to be ready
         run: make wait-registry-running
 
       - name: Start port forwarding for container registry
-        run: make port-forward &
+        run: make port-forward-registry &
 
       - name: Push container image
         run: make push-image
@@ -105,7 +98,21 @@ jobs:
       - name: Waiting for controller to be ready
         run: make wait-controller-running
 
-      - name: Get pod logs # TODO: fix
+      - name: Waiting for localstack to be ready
+        run: make wait-localstack-running
+
+      - name: Start port forwarding for Localstack
+        run: make port-forward-localstack &
+
+      - name: Test
         run: |
-          name=$(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep example)
-          kubectl --context=kind-kind logs $name | tee /dev/stderr | grep 'Hello world'
+          make create-example-queue
+          for i in $(seq 1 10); do
+            make enqueue-example-task BODY=Hey$i
+          done
+          make wait-example-completed
+          pods=($(kubectl --context=kind-kind get pods -o json | jq -r '.items[] | .metadata.name' | grep example))
+          test ${#pods[@]} -ge 3
+          for pod in ${pods[@]}; do
+            kubectl --context=kind-kind logs $pod | tee /dev/stderr | grep Hey
+          done
