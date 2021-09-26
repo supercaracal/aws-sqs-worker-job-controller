@@ -13,15 +13,16 @@ Worker jobs are declared by [CRD](https://kubernetes.io/docs/tasks/extend-kubern
 Pod <- Job <- AWSSQSWorkerJob
 ```
 
-## Running on local host
+## Running controller on local host
 ```
 $ kind create cluster
 $ make apply-manifests
 $ make build
+$ make port-forward-localstack &
 $ make run
 ```
 
-## Running in Docker
+## Running controller in Docker
 ```
 $ kind create cluster
 $ make apply-manifests
@@ -35,7 +36,6 @@ $ make push-image
 $ make port-forward-localstack &
 $ make create-example-queue
 $ make enqueue-example-task
-$ make get-example-queue-attrs
 ```
 
 ## See also

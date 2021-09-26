@@ -71,15 +71,6 @@ func (r *Reconciler) dequeueAndCreateJob(obj *customapiv1.AWSSQSWorkerJob) error
 }
 
 func (r *Reconciler) createChildJob(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
-	tpl, err := getJobTemplate(obj, msg)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.client.Builtin.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), tpl, creOpts)
-}
-
-func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job, error) {
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            fmt.Sprintf("%s-%d", obj.Name, time.Now().UnixMicro()),
@@ -101,5 +92,5 @@ func getJobTemplate(obj *customapiv1.AWSSQSWorkerJob, msg string) (*batchv1.Job,
 	job.Spec.Template.Spec.Containers[0].Args = strings.Split(msg, " ")
 	job.Spec.Template.Spec.RestartPolicy = "Never"
 
-	return job, nil
+	return r.client.Builtin.BatchV1().Jobs(obj.Namespace).Create(context.TODO(), job, creOpts)
 }
