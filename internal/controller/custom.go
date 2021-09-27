@@ -31,7 +31,7 @@ const (
 	informerReSyncDuration = 10 * time.Second
 	cleanupDuration        = 10 * time.Second
 	consumingDuration      = 1 * time.Second
-	resourceName           = "AWSQSWorkerJobs"
+	resourceName           = "AWSSQSWorkerJobs"
 	controllerName         = "aws-sqs-worker-job-controller"
 )
 
