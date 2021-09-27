@@ -3,6 +3,7 @@ SHELL     := /bin/bash -euo pipefail
 SVC       := github.com
 ORG       := supercaracal
 REPO      := aws-sqs-worker-job-controller
+API_GROUP := supercaracal
 MOD_PATH  := ${SVC}/${ORG}/${REPO}
 IMG_TAG   := latest
 REGISTRY  := 127.0.0.1:5000
@@ -51,14 +52,14 @@ ${GOBIN}/golint:
 ${TEMP_DIR}/codegen: GOENV                 += GOROOT=${CURDIR}/${TEMP_DIR}
 ${TEMP_DIR}/codegen: LOG_LEVEL             ?= 1
 ${TEMP_DIR}/codegen: API_VERSION           := v1
-${TEMP_DIR}/codegen: CODE_GEN_INPUT        := ${MOD_PATH}/pkg/apis/${ORG}/${API_VERSION}
+${TEMP_DIR}/codegen: CODE_GEN_INPUT        := ${MOD_PATH}/pkg/apis/${API_GROUP}/${API_VERSION}
 ${TEMP_DIR}/codegen: CODE_GEN_OUTPUT       := ${MOD_PATH}/pkg/generated
 ${TEMP_DIR}/codegen: CODE_GEN_ARGS         += --output-base=${CURDIR}/${TEMP_DIR}/src
 ${TEMP_DIR}/codegen: CODE_GEN_ARGS         += --go-header-file=${CURDIR}/${TEMP_DIR}/empty.txt
 ${TEMP_DIR}/codegen: CODE_GEN_ARGS         += -v ${LOG_LEVEL}
 ${TEMP_DIR}/codegen: CODE_GEN_DEEPC        := zz_generated.deepcopy
 ${TEMP_DIR}/codegen: CODE_GEN_CLI_SET_NAME := versioned
-${TEMP_DIR}/codegen: ${GOBIN}/deepcopy-gen ${GOBIN}/client-gen ${GOBIN}/lister-gen ${GOBIN}/informer-gen ${TEMP_DIR} $(shell find pkg/apis/${ORG}/ -type f -name '*.go')
+${TEMP_DIR}/codegen: ${GOBIN}/deepcopy-gen ${GOBIN}/client-gen ${GOBIN}/lister-gen ${GOBIN}/informer-gen ${TEMP_DIR} $(shell find pkg/apis/${API_GROUP}/ -type f -name '*.go')
 	${QUIET} touch -a ${TEMP_DIR}/empty.txt
 	${QUIET} mkdir -p ${TEMP_DIR}/src/${MOD_PATH}
 	${QUIET} ln -sf ${CURDIR}/pkg ${TEMP_DIR}/src/${MOD_PATH}/

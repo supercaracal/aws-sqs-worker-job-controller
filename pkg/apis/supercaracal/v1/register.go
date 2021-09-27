@@ -5,11 +5,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	myapi "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal"
+	customapi "github.com/supercaracal/aws-sqs-worker-job-controller/pkg/apis/supercaracal"
 )
 
-// SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: myapi.GroupName, Version: "v1"}
+var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: customapi.GroupName, Version: "v1"}
+
+	// SchemeBuilder initializes a scheme builder
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+
+	// AddToScheme is a global function that registers this API group & version to a scheme
+	AddToScheme = SchemeBuilder.AddToScheme
+)
 
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
@@ -21,19 +29,9 @@ func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
 
-var (
-	// SchemeBuilder initializes a scheme builder
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	// AddToScheme is a global function that registers this API group & version to a scheme
-	AddToScheme = SchemeBuilder.AddToScheme
-)
-
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
-		&AWSSQSWorkerJob{},
-		&AWSSQSWorkerJobList{},
-	)
+	scheme.AddKnownTypes(SchemeGroupVersion, &AWSSQSWorkerJob{}, &AWSSQSWorkerJobList{})
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
