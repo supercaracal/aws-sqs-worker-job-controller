@@ -49,6 +49,13 @@ spec:
                       properties:
                         serviceAccountName:
                           type: string
+                        imagePullSecrets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
                         volumes:
                           type: array
                           items:
@@ -89,6 +96,16 @@ spec:
                                 type: array
                                 items:
                                   type: string
+                              envFrom:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    secretRef:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
                               env:
                                 type: array
                                 items:
